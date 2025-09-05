@@ -2,14 +2,14 @@
 'use client';
 
 import React, { useEffect, useState, memo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { AlertTriangle, Newspaper } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 type Article = {
   source: {
@@ -20,11 +20,26 @@ type Article = {
   url: string;
   urlToImage: string;
   publishedAt: string;
+  category?: string;
 };
 
 const API_KEY = 'fee27200baf64ea482524e9e28d3ed59';
-const NEWS_API_URL = `https://newsapi.org/v2/everything?q=(disaster OR weather OR emergency) AND (earthquake OR flood OR cyclone OR wildfire OR hurricane OR tsunami OR storm OR blizzard OR tornado)&sortBy=publishedAt&language=en&apiKey=${API_KEY}`;
+const NEWS_API_URL = `https://newsapi.org/v2/everything?q=earthquake OR flood OR cyclone OR storm OR landslide OR tsunami OR hurricane OR disaster OR weather&sortBy=publishedAt&language=en&apiKey=${API_KEY}`;
 const REFETCH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+const keywords = ["earthquake", "flood", "cyclone", "storm", "landslide", "tsunami", "hurricane", "disaster", "weather"];
+
+function getNewsCategory(article: Omit<Article, 'category'>): string | undefined {
+    const content = `${article.title.toLowerCase()} ${article.description.toLowerCase()}`;
+    const foundKeyword = keywords.find(keyword => content.includes(keyword));
+    if (foundKeyword) {
+      if (foundKeyword === 'weather') return 'Weather Alert';
+      if (foundKeyword === 'disaster') return 'Disaster Update';
+      return foundKeyword.charAt(0).toUpperCase() + foundKeyword.slice(1);
+    }
+    return undefined;
+}
+
 
 async function getNews(): Promise<Article[]> {
   try {
@@ -34,7 +49,22 @@ async function getNews(): Promise<Article[]> {
       throw new Error(`NewsAPI request failed with status ${res.status}`);
     }
     const data = await res.json();
-    return data.articles.filter((article: Article) => article.urlToImage && article.description);
+    
+    if (!data.articles) return [];
+    
+    const validArticles = data.articles.filter(
+        (article: Article) => article.urlToImage && article.description && article.title
+    );
+
+    const categorizedArticles: Article[] = [];
+    for (const article of validArticles) {
+        const category = getNewsCategory(article);
+        if (category) {
+            categorizedArticles.push({ ...article, category });
+        }
+    }
+    return categorizedArticles;
+
   } catch (error) {
     console.error("Error fetching news:", error);
     // Return empty array to allow the component to render the error state
@@ -95,7 +125,8 @@ const NewsFeedComponent = () => {
                     <Card key={i} className="flex flex-col rounded-xl shadow-md overflow-hidden">
                         <Skeleton className="h-48 w-full" />
                         <CardHeader>
-                            <Skeleton className="h-6 w-3/4 rounded-lg" />
+                            <Skeleton className="h-4 w-1/4 rounded-lg" />
+                            <Skeleton className="h-6 w-3/4 mt-2 rounded-lg" />
                             <Skeleton className="h-4 w-1/2 mt-2 rounded-lg" />
                         </CardHeader>
                         <CardContent className="flex-grow space-y-2">
@@ -106,7 +137,7 @@ const NewsFeedComponent = () => {
                 ))}
             </div>
         ) : error ? (
-             <Card className="col-span-1 sm:col-span-2 lg:col-span-3 bg-destructive/10 border-destructive rounded-xl shadow-lg">
+             <Card className="col-span-1 sm:col-span-2 lg:grid-cols-3 bg-destructive/10 border-destructive rounded-xl shadow-lg">
                 <CardHeader className="flex flex-row items-center gap-4">
                     <AlertTriangle className="h-8 w-8 text-destructive" />
                     <div>
@@ -130,13 +161,16 @@ const NewsFeedComponent = () => {
                              <Image 
                                 src={article.urlToImage} 
                                 alt={article.title} 
-                                layout="fill" 
+                                fill={true} 
                                 objectFit="cover" 
                                 className="bg-secondary"
                                 unoptimized
                              />
                            </div>
                            <CardHeader>
+                               {article.category && (
+                                    <Badge variant="secondary" className="w-fit mb-2">{article.category}</Badge>
+                               )}
                                <CardTitle className="text-lg leading-snug">
                                    <Link href={article.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
                                     {article.title}
