@@ -10,13 +10,14 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { doc, getDoc, setDoc, getFirestore } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/services/firebase';
-import { Loader2, Moon, Sun, Bell, User as UserIcon, LogOut, KeyRound } from 'lucide-react';
+import { Loader2, Moon, Sun, Bell, User as UserIcon, LogOut, KeyRound, Languages } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type AlertSettings = {
   critical: boolean;
@@ -38,6 +39,7 @@ export default function SettingsPage() {
     medium: true,
     low: false,
   });
+  const [language, setLanguage] = useState('en');
 
   const fetchSettings = useCallback(async (userId: string) => {
     setIsLoading(true);
@@ -48,6 +50,7 @@ export default function SettingsPage() {
         const data = docSnap.data();
         if (data.alerts) setAlertSettings(data.alerts);
         if (data.theme) setTheme(data.theme);
+        if (data.language) setLanguage(data.language);
       }
     } catch (error) {
       console.error("Error fetching settings:", error);
@@ -106,6 +109,26 @@ export default function SettingsPage() {
       });
     }
   };
+
+  const handleLanguageChange = async (newLanguage: string) => {
+    if (!user) return;
+    setLanguage(newLanguage);
+    try {
+      await setDoc(doc(db, 'users', user.uid), { language: newLanguage }, { merge: true });
+      toast({
+        title: "Success",
+        description: "Language preference updated. The change will be reflected in a future version.",
+      });
+    } catch (error) {
+      console.error("Error saving language settings:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to save language preference.",
+      });
+    }
+  };
+
 
   const handleChangePassword = async () => {
     if (!user?.email) return;
@@ -220,10 +243,35 @@ export default function SettingsPage() {
                 <CardDescription>Customize the look and feel of the application.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                    <Label htmlFor="dark-mode">Dark Mode</Label>
-                    <Switch id="dark-mode" checked={theme === 'dark'} onCheckedChange={handleThemeChange}/>
-                </div>
+                  <div className="flex items-center justify-between">
+                      <Label htmlFor="dark-mode">Dark Mode</Label>
+                      <Switch id="dark-mode" checked={theme === 'dark'} onCheckedChange={handleThemeChange}/>
+                  </div>
+                </CardContent>
+            </Card>
+            </motion.div>
+
+            {/* Language Card */}
+            <motion.div variants={itemVariants}>
+            <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
+                <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                    <Languages className="h-5 w-5 text-primary"/>
+                    <span>Language</span>
+                </CardTitle>
+                <CardDescription>Choose your preferred language.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Select value={language} onValueChange={handleLanguageChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="hi">Hindi (हिन्दी)</SelectItem>
+                      <SelectItem value="or">Odia (ଓଡ଼ିଆ)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </CardContent>
             </Card>
             </motion.div>
