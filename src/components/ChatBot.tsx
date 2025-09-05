@@ -228,7 +228,7 @@ const ChatBotComponent = () => {
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.3 }}
           >
-              <Card className="shadow-2xl flex flex-col h-[500px] relative">
+              <Card className="shadow-2xl flex flex-col h-[600px] relative">
                 <CardHeader className="flex flex-row items-center justify-between bg-primary text-primary-foreground">
                     <div className="flex items-center gap-2">
                       <CardTitle className="flex items-center gap-2 text-lg">
