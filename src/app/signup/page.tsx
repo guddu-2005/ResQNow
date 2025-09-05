@@ -21,6 +21,7 @@ import { auth } from "@/services/firebase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
+import { motion } from "framer-motion";
 
 const signupFormSchema = z.object({
   email: z.string().email("Invalid email address."),
@@ -68,7 +69,12 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 md:px-6 lg:py-16 flex items-center justify-center">
+    <motion.div 
+      className="container mx-auto px-4 py-12 md:px-6 lg:py-16 flex items-center justify-center"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="mx-auto max-w-md w-full">
         <Card className="shadow-lg">
           <CardHeader className="text-center">
@@ -131,7 +137,6 @@ export default function SignupPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </motion.div>
   );
 }
-

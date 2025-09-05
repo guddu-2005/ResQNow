@@ -11,6 +11,11 @@ import {
 import { User, onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
 import { auth } from "@/services/firebase";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+
+const ChatBot = dynamic(() => import('@/components/ChatBot').then(mod => mod.ChatBot), {
+  ssr: false,
+});
 
 interface AuthContextType {
   user: User | null;
@@ -45,7 +50,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      <ChatBot />
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

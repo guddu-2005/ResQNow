@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, memo } from 'react';
 import Parser from 'rss-parser';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,7 @@ async function getFeed(): Promise<FeedItem[]> {
     return feed.items.filter(item => !item.title?.includes("GDACS RSS information"));
 }
 
-export function DisasterFeed() {
+const DisasterFeedComponent = () => {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -148,3 +148,5 @@ export function DisasterFeed() {
     </>
   );
 }
+
+export const DisasterFeed = memo(DisasterFeedComponent);

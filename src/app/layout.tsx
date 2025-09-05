@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { cn } from '@/lib/utils';
@@ -5,7 +6,6 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/hooks/use-auth';
-import { ChatBot } from '@/components/ChatBot';
 
 export const metadata: Metadata = {
   title: 'Rescue.ai',
@@ -30,7 +30,6 @@ export default function RootLayout({
           <main className="flex-1">{children}</main>
           <Footer />
           <Toaster />
-          <ChatBot />
         </AuthProvider>
       </body>
     </html>

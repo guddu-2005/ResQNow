@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { Bot, X, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { askGemini } from '@/services/gemini';
 import { getWeather } from '@/services/weather';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type Message = {
   id: number;
@@ -24,7 +25,7 @@ type CachedWeather = {
 const WEATHER_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
 const TYPING_SPEED = 40; // ms per character
 
-export function ChatBot() {
+const ChatBotComponent = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -131,86 +132,104 @@ export function ChatBot() {
 
   return (
     <>
-      <div className="fixed bottom-6 right-6 z-50">
+      <motion.div 
+        className="fixed bottom-6 right-6 z-50"
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ delay: 1, type: "spring", stiffness: 200, damping: 20 }}
+      >
         <Button
           onClick={() => setIsOpen(!isOpen)}
           className="rounded-full w-16 h-16 shadow-lg"
         >
           {isOpen ? <X size={24} /> : <Bot size={24} />}
         </Button>
-      </div>
+      </motion.div>
 
-      {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[calc(100vw-3rem)] max-w-sm">
-            <Card className="shadow-2xl">
-              <CardHeader className="flex flex-row items-center justify-between bg-primary text-primary-foreground">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                    <Bot size={20} />
-                    <span>Rescue.AI Assistant</span>
-                </CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground md:hidden">
-                    <X className="h-4 w-4" />
-                </Button>
-              </CardHeader>
-              <CardContent className="h-[400px] flex flex-col p-4">
-                <div ref={chatBodyRef} className="flex-grow overflow-y-auto pr-4 -mr-4 space-y-4">
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={cn(
-                        'flex items-start gap-3',
-                        message.sender === 'user' ? 'justify-end' : 'justify-start'
-                      )}
-                    >
-                      {message.sender === 'bot' && (
-                        <div className="bg-muted text-foreground rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
-                           <Bot size={16} />
-                        </div>
-                      )}
-                       <div
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            className="fixed bottom-24 right-6 z-50 w-[calc(100vw-3rem)] max-w-sm"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.3 }}
+          >
+              <Card className="shadow-2xl flex flex-col h-[500px]">
+                <CardHeader className="flex flex-row items-center justify-between bg-primary text-primary-foreground">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                      <Bot size={20} />
+                      <span>Rescue.AI Assistant</span>
+                  </CardTitle>
+                  <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground md:hidden">
+                      <X className="h-4 w-4" />
+                  </Button>
+                </CardHeader>
+                <CardContent className="flex-1 overflow-y-auto p-4">
+                  <div ref={chatBodyRef} className="space-y-4">
+                    {messages.map((message) => (
+                      <motion.div
+                        key={message.id}
                         className={cn(
-                          'p-3 rounded-lg max-w-[80%] whitespace-pre-wrap',
-                           message.sender === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-foreground'
+                          'flex items-start gap-3',
+                          message.sender === 'user' ? 'justify-end' : 'justify-start'
                         )}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
                       >
-                        <p className="text-sm">{message.text}</p>
+                        {message.sender === 'bot' && (
+                          <div className="bg-muted text-foreground rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
+                             <Bot size={16} />
+                          </div>
+                        )}
+                         <div
+                          className={cn(
+                            'p-3 rounded-lg max-w-[80%] whitespace-pre-wrap',
+                             message.sender === 'user'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-foreground'
+                          )}
+                        >
+                          <p className="text-sm">{message.text}</p>
+                        </div>
+                      </motion.div>
+                    ))}
+                     {isLoading && (
+                      <div className="flex items-start gap-3 justify-start">
+                           <div className="bg-muted text-foreground rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
+                             <Bot size={16} />
+                          </div>
+                          <div className="p-3 rounded-lg bg-muted text-foreground">
+                              <p className="text-sm italic">Thinking...</p>
+                          </div>
                       </div>
-                    </div>
-                  ))}
-                   {isLoading && (
-                    <div className="flex items-start gap-3 justify-start">
-                         <div className="bg-muted text-foreground rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
-                           <Bot size={16} />
-                        </div>
-                        <div className="p-3 rounded-lg bg-muted text-foreground">
-                            <p className="text-sm italic">Thinking...</p>
-                        </div>
-                    </div>
-                  )}
-                  <div ref={endOfMessagesRef} />
-                </div>
-              </CardContent>
-              <CardFooter className="border-t pt-4">
-                 <div className="flex w-full items-center space-x-2">
-                    <Input
-                        type="text"
-                        placeholder="Ask about disasters or weather..."
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && !isLoading && !isTyping && handleSendMessage()}
-                        disabled={isLoading || isTyping}
-                        className="flex-1"
-                    />
-                    <Button onClick={handleSendMessage} disabled={isLoading || isTyping || !inputValue.trim()}>
-                        <Send size={16} />
-                    </Button>
-                </div>
-              </CardFooter>
-            </Card>
-        </div>
-      )}
+                    )}
+                    <div ref={endOfMessagesRef} />
+                  </div>
+                </CardContent>
+                <CardFooter className="border-t pt-4">
+                   <div className="flex w-full items-center space-x-2">
+                      <Input
+                          type="text"
+                          placeholder="Ask about disasters or weather..."
+                          value={inputValue}
+                          onChange={(e) => setInputValue(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && !isLoading && !isTyping && handleSendMessage()}
+                          disabled={isLoading || isTyping}
+                          className="flex-1"
+                      />
+                      <Button onClick={handleSendMessage} disabled={isLoading || isTyping || !inputValue.trim()}>
+                          <Send size={16} />
+                      </Button>
+                  </div>
+                </CardFooter>
+              </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
+
+export const ChatBot = memo(ChatBotComponent);
