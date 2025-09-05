@@ -42,6 +42,7 @@ const ChatBotComponent = () => {
 
   const chatBodyRef = useRef<HTMLDivElement>(null);
   const typingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isScrolledUpRef = useRef(false);
 
   const scrollToBottom = useCallback((behavior: 'smooth' | 'auto' = 'smooth') => {
     if (chatBodyRef.current) {
@@ -52,31 +53,30 @@ const ChatBotComponent = () => {
     }
   }, []);
 
-  const handleScroll = () => {
-    if (chatBodyRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = chatBodyRef.current;
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50; // Add a small threshold
+  const handleScroll = useCallback(() => {
+    const chatBody = chatBodyRef.current;
+    if (chatBody) {
+      const { scrollTop, scrollHeight, clientHeight } = chatBody;
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+      isScrolledUpRef.current = !isAtBottom;
       setShowScrollDown(!isAtBottom);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const chatBody = chatBodyRef.current;
     if (isOpen && chatBody) {
-        // Initial scroll to bottom when chat opens
         scrollToBottom('auto');
-        
-        chatBody.addEventListener('scroll', handleScroll);
+        chatBody.addEventListener('scroll', handleScroll, { passive: true });
         return () => chatBody.removeEventListener('scroll', handleScroll);
     }
-  }, [isOpen, scrollToBottom]);
+  }, [isOpen, handleScroll, scrollToBottom]);
 
   useEffect(() => {
-    // Only auto-scroll if the user isn't scrolled up
-    if ((isTyping || isLoading) && !showScrollDown) {
+    if (!isScrolledUpRef.current) {
         scrollToBottom();
     }
-  }, [messages, isTyping, isLoading, showScrollDown, scrollToBottom]);
+  }, [messages, isTyping, scrollToBottom]);
 
 
   const getCurrentPosition = useCallback((): Promise<GeolocationPosition> => {
@@ -99,7 +99,6 @@ const ChatBotComponent = () => {
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
-    // Stop any ongoing typing before sending a new message
     stopTyping();
 
     const userMessageText = inputValue;
@@ -129,7 +128,7 @@ const ChatBotComponent = () => {
             setLastWeather({ data: weatherInfo, timestamp: Date.now() });
             geminiPrompt = `The user asked: "${userMessageText}". The current weather is: "${weatherInfo}". Please answer the user's question based on this weather data. Format your response as a natural, conversational paragraph. Do not use markdown, bullet points, or asterisks.`;
             botResponseText = await askGemini(geminiPrompt);
-          } catch (geoError: any) {
+          } catch (geoError: any)             {
              console.error("Geolocation error:", geoError);
              botResponseText = "I couldn't get your location to check the weather. Please ensure you've enabled location permissions for this site. I can still answer other questions.";
           }
@@ -270,7 +269,7 @@ const ChatBotComponent = () => {
                             exit={{ scale: 0, opacity: 0 }}
                             transition={{ type: "spring", stiffness: 300, damping: 20 }}
                         >
-                            <Button onClick={() => scrollToBottom()} size="icon" className="rounded-full shadow-lg">
+                            <Button onClick={() => scrollToBottom('smooth')} size="icon" className="rounded-full shadow-lg">
                                 <ArrowDown size={18} />
                             </Button>
                         </motion.div>
