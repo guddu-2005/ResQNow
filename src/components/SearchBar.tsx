@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 
 interface SearchBarProps {
-  onSearch: (lat: number, lon: number) => void;
+  onSearch: (lat: number, lon: number, placeName: string) => void;
 }
 
 export function SearchBar({ onSearch }: SearchBarProps) {
@@ -33,8 +33,9 @@ export function SearchBar({ onSearch }: SearchBarProps) {
       const data = await response.json();
 
       if (data && data.length > 0) {
-        const { lat, lon } = data[0];
-        onSearch(parseFloat(lat), parseFloat(lon));
+        const { lat, lon, display_name } = data[0];
+        onSearch(parseFloat(lat), parseFloat(lon), display_name);
+        setQuery('');
       } else {
         setError('Location not found. Please try a different search term.');
       }

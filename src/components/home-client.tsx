@@ -7,10 +7,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {Map, Wind, Thermometer, Cloud} from 'lucide-react';
+import {Wind, Thermometer, Cloud} from 'lucide-react';
 import {useEffect, useState} from 'react';
 import {getWeatherByCoords} from '@/services/weather';
 import { SearchBar } from './SearchBar';
+import dynamic from 'next/dynamic';
+
+const MapView = dynamic(() => import('@/components/map-view').then((mod) => mod.MapView), {
+  ssr: false,
+});
 
 type WeatherData = {
   name: string;
@@ -35,9 +40,17 @@ export function HomeClient({ children }: { children: React.ReactNode }) {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [location, setLocation] = useState<Location | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([20.5937, 78.9629]);
+  const [markerPosition, setMarkerPosition] = useState<[number, number] | null>(null);
+  const [searchedPlace, setSearchedPlace] = useState<string>('');
 
-  const handleLocationSearch = (lat: number, lon: number) => {
+
+  const handleLocationSearch = (lat: number, lon: number, placeName: string) => {
+    const newCenter: [number, number] = [lat, lon];
     setLocation({ latitude: lat, longitude: lon });
+    setMapCenter(newCenter);
+    setMarkerPosition(newCenter);
+    setSearchedPlace(placeName);
   };
 
   useEffect(() => {
@@ -45,6 +58,11 @@ export function HomeClient({ children }: { children: React.ReactNode }) {
       try {
         const weatherData = await getWeatherByCoords(lat, lon);
         setWeather(weatherData);
+        if(!markerPosition) {
+          setMapCenter([lat, lon]);
+          setMarkerPosition([lat, lon]);
+          setSearchedPlace(weatherData.name);
+        }
       } catch (err) {
         setError('Could not fetch weather data.');
         console.error(err);
@@ -63,10 +81,16 @@ export function HomeClient({ children }: { children: React.ReactNode }) {
         (err) => {
           setError('Please enable location access to see local weather and disaster alerts.');
           console.error(err);
+          // Fallback to default location if permission is denied
+          fetchInitialData(mapCenter[0], mapCenter[1]);
+          setSearchedPlace('India');
         }
       );
     } else {
       setError('Geolocation is not supported by your browser.');
+      // Fallback to default location
+      fetchInitialData(mapCenter[0], mapCenter[1]);
+      setSearchedPlace('India');
     }
   }, [location]);
 
@@ -82,17 +106,7 @@ export function HomeClient({ children }: { children: React.ReactNode }) {
           </div>
           <Card className="w-full shadow-lg">
             <CardContent className="p-0">
-              {/* Placeholder for Interactive Map */}
-              {/* Future Integration: Google Maps API will be used here */}
-              <div className="flex items-center justify-center bg-secondary rounded-lg aspect-[16/7] text-muted-foreground">
-                <div className="text-center space-y-2">
-                  <Map className="mx-auto h-12 w-12" />
-                  <p className="font-medium">Interactive Map Will Go Here</p>
-                  <p className="text-sm">
-                    {location ? `Showing results for: Lat: ${location.latitude.toFixed(4)}, Lon: ${location.longitude.toFixed(4)}` : 'Real-time disaster tracking and resource locations.'}
-                  </p>
-                </div>
-              </div>
+               <MapView center={mapCenter} markerPosition={markerPosition} placeName={searchedPlace} />
             </CardContent>
           </Card>
         </div>
