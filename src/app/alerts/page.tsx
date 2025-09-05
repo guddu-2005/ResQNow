@@ -76,12 +76,12 @@ export default function AlertsPage() {
             <motion.div key={alert.id} variants={itemVariants}>
               <Alert variant={alert.severity === 'High' ? 'destructive' : 'default'} className="shadow-lg rounded-xl transition-transform hover:scale-105">
                 <AlertTriangle className="h-5 w-5" />
-                <div className="flex justify-between items-start ml-2">
-                    <div>
+                <div className="flex flex-col sm:flex-row justify-between items-start ml-2 gap-2 sm:gap-4">
+                    <div className="flex-grow">
                       <AlertTitle className="font-bold text-lg">{alert.title}</AlertTitle>
                       <AlertDescription className="mt-1">{alert.description}</AlertDescription>
                     </div>
-                    <div className="text-right text-xs text-muted-foreground whitespace-nowrap pl-4">
+                    <div className="text-left sm:text-right text-xs text-muted-foreground whitespace-nowrap pt-1 sm:pt-0">
                         <p>{alert.location}</p>
                         <p>{alert.time}</p>
                     </div>

@@ -54,7 +54,7 @@ export function Header() {
           <Logo />
         </div>
 
-        <div className="flex w-full items-center justify-between md:w-auto">
+        <div className="flex w-full items-center justify-between md:w-auto md:flex-1">
           <div className="md:hidden">
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
@@ -63,7 +63,7 @@ export function Header() {
                   <span className="sr-only">Toggle Menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[300px]">
+              <SheetContent side="left" className="w-[300px] sm:w-[360px]">
                 <div className="p-4">
                   <Logo />
                 </div>
@@ -79,15 +79,16 @@ export function Header() {
           <div className="md:hidden">
             <Logo />
           </div>
+
+          <nav className="hidden items-center gap-6 text-sm md:flex">
+            {navLinks.map((link) => (
+              <NavLink key={link.href} {...link} />
+            ))}
+          </nav>
         </div>
 
-        <nav className="hidden items-center gap-6 text-sm md:flex flex-1">
-          {navLinks.map((link) => (
-            <NavLink key={link.href} {...link} />
-          ))}
-        </nav>
 
-        <div className="hidden flex-1 items-center justify-end space-x-4 md:flex">
+        <div className="flex flex-1 items-center justify-end space-x-2 md:space-x-4">
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -116,14 +117,14 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <>
+            <div className="hidden sm:flex items-center gap-2">
               <Button variant="ghost" asChild>
                 <Link href="/login">Login</Link>
               </Button>
               <Button asChild>
                 <Link href="/signup">Sign Up</Link>
               </Button>
-            </>
+            </div>
           )}
         </div>
       </div>

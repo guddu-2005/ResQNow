@@ -43,24 +43,24 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl font-headline">
             User Dashboard
             </h1>
-            <p className="text-muted-foreground md:text-xl">
+            <p className="text-muted-foreground md:text-xl px-2">
             Welcome, {user.displayName || user.email}!
             </p>
         </div>
 
         <Card className="w-full max-w-2xl shadow-xl rounded-xl transition-all hover:shadow-2xl hover:scale-105">
             <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-2xl font-bold">
+                <CardTitle className="flex items-center gap-3 text-xl sm:text-2xl font-bold">
                     <User className="h-7 w-7 text-primary"/>
                     <span>Coming Soon</span>
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 rounded-lg bg-secondary">
-                    <p className="text-lg font-medium text-foreground">
+                <div className="flex flex-col items-center justify-center text-center p-4 sm:p-8 space-y-4 rounded-lg bg-secondary">
+                    <p className="text-base sm:text-lg font-medium text-foreground">
                         The user dashboard will be available here soon.
                     </p>
-                    <p className="text-muted-foreground">
+                    <p className="text-sm sm:text-base text-muted-foreground">
                         It will feature saved locations, active alerts for your areas, and your contribution history.
                     </p>
                 </div>

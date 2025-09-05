@@ -87,7 +87,7 @@ export default function ReportPage() {
 
             <Card className="shadow-2xl rounded-xl">
                 <CardHeader>
-                    <CardTitle>Disaster Report Form</CardTitle>
+                    <CardTitle className="text-xl sm:text-2xl">Disaster Report Form</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>

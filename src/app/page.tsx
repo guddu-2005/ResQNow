@@ -32,7 +32,7 @@ export default function Home() {
   return (
     <motion.div initial="hidden" animate="visible" variants={containerVariants}>
       <motion.section
-        className="w-full py-20 md:py-32 lg:py-40 xl:py-48 bg-gradient-to-b from-background to-secondary"
+        className="w-full py-20 md:py-32 lg:py-40 bg-gradient-to-b from-background to-secondary"
         variants={itemVariants}
       >
         <div className="container px-4 md:px-6">
@@ -45,11 +45,14 @@ export default function Home() {
                 Empowering communities to act fast, stay informed, and stay safe.
               </p>
             </motion.div>
-            <motion.div className="space-x-4" variants={itemVariants}>
-              <Button asChild size="lg" className="shadow-lg transition-transform active:scale-95 hover:scale-105">
+            <motion.div 
+              className="flex flex-col sm:flex-row items-center gap-4" 
+              variants={itemVariants}
+            >
+              <Button asChild size="lg" className="w-full sm:w-auto shadow-lg transition-transform active:scale-95 hover:scale-105">
                 <Link href="/report">Report a Disaster</Link>
               </Button>
-              <Button variant="secondary" size="lg" asChild className="shadow-lg transition-transform active:scale-95 hover:scale-105">
+              <Button variant="secondary" size="lg" asChild className="w-full sm:w-auto shadow-lg transition-transform active:scale-95 hover:scale-105">
                 <Link href="/alerts">View Alerts</Link>
               </Button>
             </motion.div>
