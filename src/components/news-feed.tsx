@@ -23,9 +23,9 @@ const NewsFeedComponent = () => {
     setLoading(true);
     setError(null);
     try {
-      const newsArticles = await fetchNews('disaster OR weather', 6);
+      const newsArticles = await fetchNews('disaster', 6);
       if (newsArticles.length === 0) {
-        setError("Could not fetch disaster news at this moment. The source may be unavailable or there are no recent articles.");
+        setError("No current disaster or weather updates available right now. Please check back later.");
       }
       setArticles(newsArticles);
     } catch (err: any) {
@@ -79,12 +79,12 @@ const NewsFeedComponent = () => {
                 ))}
             </div>
         ) : error ? (
-             <Card className="col-span-1 sm:col-span-2 lg:grid-cols-3 bg-destructive/10 border-destructive rounded-xl shadow-lg">
+             <Card className="col-span-1 sm:col-span-2 lg:col-span-3 bg-secondary/80 border-border rounded-xl shadow-lg">
                 <CardHeader className="flex flex-row items-center gap-4">
-                    <AlertTriangle className="h-8 w-8 text-destructive" />
+                    <AlertTriangle className="h-8 w-8 text-muted-foreground" />
                     <div>
-                        <CardTitle>Failed to Load News</CardTitle>
-                        <CardDescription className="text-destructive/80">{error}</CardDescription>
+                        <CardTitle>No Updates Available</CardTitle>
+                        <CardDescription className="text-muted-foreground">{error}</CardDescription>
                     </div>
                 </CardHeader>
             </Card>
@@ -137,5 +137,3 @@ const NewsFeedComponent = () => {
 }
 
 export const NewsFeed = memo(NewsFeedComponent);
-
-    
