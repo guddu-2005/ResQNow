@@ -23,7 +23,7 @@ type Article = {
 };
 
 const API_KEY = 'fee27200baf64ea482524e9e28d3ed59';
-const NEWS_API_URL = `https://newsapi.org/v2/everything?q=earthquake OR flood OR cyclone OR wildfire OR hurricane OR tsunami&sortBy=publishedAt&language=en&apiKey=${API_KEY}`;
+const NEWS_API_URL = `https://newsapi.org/v2/everything?q=(disaster OR weather OR emergency) AND (earthquake OR flood OR cyclone OR wildfire OR hurricane OR tsunami OR storm OR blizzard OR tornado)&sortBy=publishedAt&language=en&apiKey=${API_KEY}`;
 const REFETCH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 async function getNews(): Promise<Article[]> {
