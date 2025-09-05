@@ -98,7 +98,7 @@ export function Header() {
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || undefined} />
                     <AvatarFallback>
-                      <Settings />
+                      <Menu />
                     </AvatarFallback>
                   </Avatar>
                 </Button>
