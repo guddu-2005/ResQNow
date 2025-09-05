@@ -61,12 +61,12 @@ type FullWeatherData = {
 const API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_KEY;
 
 async function fetchWeather(lat: number, lon: number): Promise<Omit<FullWeatherData, 'locationName'>> {
-  if (!API_KEY) throw new Error('OpenWeather API key not configured.');
+  if (!API_KEY) throw new Error('OpenWeather API key not configured. Please add NEXT_PUBLIC_OPENWEATHER_KEY to your environment variables.');
   
   // Fetch current and forecast data
   const oneCallUrl = `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly,alerts&appid=${API_KEY}&units=metric`;
   const oneCallRes = await fetch(oneCallUrl);
-  if (!oneCallRes.ok) throw new Error(`Weather API request failed with status ${oneCallRes.status}`);
+  if (!oneCallRes.ok) throw new Error(`Weather API request failed with status ${oneCallRes.status}. Check your API key and permissions.`);
   const currentAndForecastData: WeatherData = await oneCallRes.json();
 
   // Fetch historical data for the last 2 days
@@ -115,6 +115,9 @@ const WeatherComponent = () => {
     setLoading(true);
     setError(null);
     try {
+      if (!API_KEY) {
+        throw new Error('OpenWeather API key not configured.');
+      }
       let lat, lon, name;
       if ('city' in query) {
         const coords = await geocodeCity(query.city);
@@ -345,5 +348,3 @@ const WeatherSkeleton = () => {
 }
 
 export const Weather = memo(WeatherComponent);
-
-    
