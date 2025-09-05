@@ -1,7 +1,30 @@
+
+'use client';
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { User, Loader2 } from "lucide-react";
 
 export default function DashboardPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [user, loading, router]);
+
+  if (loading || !user) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-12 md:px-6 lg:py-16">
       <div className="flex flex-col items-center justify-center space-y-8">
@@ -10,7 +33,7 @@ export default function DashboardPage() {
             User Dashboard
             </h1>
             <p className="text-muted-foreground md:text-xl">
-            Your personal disaster preparedness hub.
+            Welcome, {user.displayName || user.email}!
             </p>
         </div>
 
