@@ -1,66 +1,110 @@
+
+'use client';
+
+import { useEffect, useState } from 'react';
 import Parser from 'rss-parser';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Rss } from 'lucide-react';
+import { Rss, AlertTriangle } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type FeedItem = {
-  title: string;
-  link: string;
-  pubDate: string;
-  content: string;
-  creator: string;
+  title?: string;
+  link?: string;
+  pubDate?: string;
+  content?: string;
+  contentSnippet?: string;
+  creator?: string;
 };
 
-async function getFeed() {
-  try {
+async function getFeed(): Promise<FeedItem[]> {
     const parser = new Parser<Record<string, unknown>, { creator: string; }>({
       customFields: {
         item: ['dc:creator'],
       },
     });
 
-    const feed = await parser.parseURL('https://www.gdacs.org/rss.aspx');
-    let items = feed.items.filter(item => !item.title?.includes("GDACS RSS information"));
+    // CORS proxy to avoid browser-side restrictions
+    const proxyUrl = 'https://api.allorigins.win/raw?url=';
+    const feedUrl = 'https://www.gdacs.org/rss.aspx';
     
-    return items.slice(0, 3);
-  } catch (error) {
-    console.error("Failed to fetch RSS feed:", error);
-    return [];
-  }
+    const feed = await parser.parseURL(`${proxyUrl}${encodeURIComponent(feedUrl)}`);
+    return feed.items.filter(item => !item.title?.includes("GDACS RSS information"));
 }
 
-export async function DisasterFeed() {
-  const items = await getFeed();
+export function DisasterFeed() {
+  const [items, setItems] = useState<FeedItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (items.length === 0) {
+  useEffect(() => {
+    async function loadFeed() {
+      try {
+        setLoading(true);
+        const feedItems = await getFeed();
+        setItems(feedItems.slice(0, 3));
+      } catch (err) {
+        console.error("Failed to fetch RSS feed:", err);
+        setError("Could not fetch disaster alerts. The source may be temporarily unavailable.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadFeed();
+  }, []);
+
+  if (loading) {
     return (
-      <Card className="col-span-1 sm:col-span-2 lg:col-span-3">
-        <CardHeader>
-          <CardTitle>Latest News & Updates</CardTitle>
+      <>
+        {[...Array(3)].map((_, i) => (
+          <Card key={i} className="flex flex-col shadow-sm">
+            <CardHeader>
+              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-4 w-1/2 mt-2" />
+            </CardHeader>
+            <CardContent className="flex-grow space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+            </CardContent>
+            <CardFooter>
+              <Skeleton className="h-6 w-20" />
+            </CardFooter>
+          </Card>
+        ))}
+      </>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="col-span-1 sm:col-span-2 lg:col-span-3 bg-destructive/10 border-destructive">
+        <CardHeader className="flex flex-row items-center gap-4">
+          <AlertTriangle className="h-8 w-8 text-destructive" />
+          <div>
+            <CardTitle>Failed to Load News</CardTitle>
+            <CardDescription className="text-destructive/80">{error}</CardDescription>
+          </div>
         </CardHeader>
-        <CardContent>
-          <p>Could not fetch disaster alerts. Please try again later.</p>
-        </CardContent>
       </Card>
     );
   }
 
   return (
     <>
-      {items.map((item: any) => {
+      {items.map((item: FeedItem, index: number) => {
         const pubDate = item.pubDate ? new Date(item.pubDate).toLocaleDateString() : 'No date';
         const creator = item.creator || 'GDACS';
         
         return (
           <Card
-            key={item.link}
+            key={item.link || index}
             className="flex flex-col shadow-sm hover:shadow-md transition-shadow"
           >
             <CardHeader>
               <CardTitle className="flex items-start gap-2">
                 <Rss className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
-                <span>{item.title}</span>
+                <span>{item.title || 'Untitled Update'}</span>
               </CardTitle>
               <CardDescription>
                 {creator} - {pubDate}
@@ -71,13 +115,13 @@ export async function DisasterFeed() {
                 {item.contentSnippet || 'No description available.'}
               </p>
             </CardContent>
-            <div className="p-6 pt-0">
+            <CardFooter>
               <Button variant="link" className="p-0 h-auto" asChild>
-                <Link href={item.link!} target="_blank" rel="noopener noreferrer">
+                <Link href={item.link || '#'} target="_blank" rel="noopener noreferrer">
                   Read More
                 </Link>
               </Button>
-            </div>
+            </CardFooter>
           </Card>
         );
       })}
