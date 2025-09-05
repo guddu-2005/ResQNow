@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
-import { Bot, X, Send, ArrowDown, Square } from 'lucide-react';
+import { Bot, X, Send, ArrowDown, Square, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,15 +25,17 @@ type CachedWeather = {
 const WEATHER_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
 const TYPING_SPEED = 40; // ms per character
 
-const ChatBotComponent = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
+const initialMessages: Message[] = [
     {
       id: 0,
       sender: 'bot',
       text: "Hello! I'm RescueBot. How can I assist you with disaster information or current weather?",
     },
-  ]);
+];
+
+const ChatBotComponent = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
@@ -45,12 +47,14 @@ const ChatBotComponent = () => {
   const isScrolledUpRef = useRef(false);
 
   const scrollToBottom = useCallback((behavior: 'smooth' | 'auto' = 'smooth') => {
-    if (chatBodyRef.current) {
-        chatBodyRef.current.scrollTo({
-            top: chatBodyRef.current.scrollHeight,
-            behavior: behavior,
-        });
-    }
+    setTimeout(() => {
+        if (chatBodyRef.current) {
+            chatBodyRef.current.scrollTo({
+                top: chatBodyRef.current.scrollHeight,
+                behavior: behavior,
+            });
+        }
+    }, 0);
   }, []);
 
   const handleScroll = useCallback(() => {
@@ -68,12 +72,26 @@ const ChatBotComponent = () => {
     if (isOpen && chatBody) {
         scrollToBottom('auto');
         chatBody.addEventListener('scroll', handleScroll, { passive: true });
-        return () => chatBody.removeEventListener('scroll', handleScroll);
+        
+        const stopWheelPropagation = (e: WheelEvent) => {
+            if (chatBody.contains(e.target as Node)) {
+                if (chatBody.scrollHeight > chatBody.clientHeight) {
+                    e.stopPropagation();
+                }
+            }
+        };
+        
+        document.addEventListener('wheel', stopWheelPropagation, { capture: true });
+        
+        return () => {
+            chatBody.removeEventListener('scroll', handleScroll);
+            document.removeEventListener('wheel', stopWheelPropagation, { capture: true });
+        };
     }
   }, [isOpen, handleScroll, scrollToBottom]);
 
   useEffect(() => {
-    if (!isScrolledUpRef.current) {
+    if (!isScrolledUpRef.current && isTyping) {
         scrollToBottom();
     }
   }, [messages, isTyping, scrollToBottom]);
@@ -96,16 +114,24 @@ const ChatBotComponent = () => {
     setIsTyping(false);
   }, []);
 
+  const handleNewChat = () => {
+    stopTyping();
+    setMessages(initialMessages);
+    setIsLoading(false);
+  };
+
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
     stopTyping();
+    isScrolledUpRef.current = false;
 
     const userMessageText = inputValue;
     const nextId = messages.length > 0 ? Math.max(...messages.map(m => m.id)) + 1 : 1;
     
     setMessages((prev) => [...prev, { id: nextId, sender: 'user', text: userMessageText }]);
     setInputValue('');
+    scrollToBottom('smooth');
     setIsLoading(true);
 
     const lowerCaseInput = userMessageText.toLowerCase();
@@ -204,13 +230,18 @@ const ChatBotComponent = () => {
           >
               <Card className="shadow-2xl flex flex-col h-[500px] relative">
                 <CardHeader className="flex flex-row items-center justify-between bg-primary text-primary-foreground">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                      <Bot size={20} />
-                      <span>Rescue.AI Assistant</span>
-                  </CardTitle>
-                  <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground md:hidden">
-                      <X className="h-4 w-4" />
-                  </Button>
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                          <Bot size={20} />
+                          <span>Rescue.AI Assistant</span>
+                      </CardTitle>
+                      <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-primary-foreground hover:bg-primary/80 h-7 w-7">
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground md:hidden">
+                        <X className="h-4 w-4" />
+                    </Button>
                 </CardHeader>
                 <CardContent ref={chatBodyRef} className="flex-1 overflow-y-auto p-4">
                   <div className="space-y-4">
