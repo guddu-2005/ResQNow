@@ -39,7 +39,7 @@ export default function SettingsPage() {
     low: false,
   });
 
-  const fetchSettings = useCallback(async (userId: string) => {
+  const fetchSettings = useCallback(async (userId: string, retries = 3) => {
     setIsLoading(true);
     try {
       const settingsDocRef = doc(db, 'users', userId);
@@ -49,7 +49,12 @@ export default function SettingsPage() {
         if (data.alerts) setAlertSettings(data.alerts);
         if (data.theme) setTheme(data.theme);
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (error.code === 'failed-precondition' && retries > 0) {
+        // Retry if Firestore is initializing
+        setTimeout(() => fetchSettings(userId, retries - 1), 500);
+        return;
+      }
       console.error("Error fetching settings:", error);
       toast({
         variant: "destructive",
@@ -185,24 +190,6 @@ export default function SettingsPage() {
           </Card>
         </motion.div>
 
-        {/* Account Card */}
-        <motion.div variants={itemVariants}>
-          <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <LogOut className="h-5 w-5 text-destructive"/>
-                <span>Account</span>
-              </CardTitle>
-              <CardDescription>Log out from your account.</CardDescription>
-            </CardHeader>
-            <CardContent>
-               <Button onClick={signOut} variant="destructive" className="w-full">
-                  Sign Out
-               </Button>
-            </CardContent>
-          </Card>
-        </motion.div>
-
         {/* Alerts Card */}
         <motion.div variants={itemVariants}>
           <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
@@ -265,7 +252,27 @@ export default function SettingsPage() {
           </Card>
         </motion.div>
 
+        {/* Account Card */}
+        <motion.div variants={itemVariants}>
+          <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <LogOut className="h-5 w-5 text-destructive"/>
+                <span>Account</span>
+              </CardTitle>
+              <CardDescription>Log out from your account.</CardDescription>
+            </CardHeader>
+            <CardContent>
+               <Button onClick={signOut} variant="destructive" className="w-full">
+                  Sign Out
+               </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+
       </motion.div>
     </motion.div>
   );
 }
+
+    
