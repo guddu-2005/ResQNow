@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,12 +26,14 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { Upload } from "lucide-react";
 
 const reportFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters.").max(50, "Name must be at most 50 characters."),
   location: z.string().min(5, "Please provide a more specific location.").max(100),
   disasterType: z.enum(["Earthquake", "Flood", "Fire", "Tornado", "Hurricane", "Other"]),
   description: z.string().min(10, "Description must be at least 10 characters.").max(500, "Description must be at most 500 characters."),
+  media: z.any().optional(),
 });
 
 type ReportFormValues = z.infer<typeof reportFormSchema>;
@@ -46,6 +49,8 @@ export default function ReportPage() {
       description: "",
     },
   });
+
+  const fileRef = form.register("media");
 
   function onSubmit(data: ReportFormValues) {
     // Future Integration: Implement API call to submit disaster report to a backend service like Firebase Firestore.
@@ -155,6 +160,25 @@ export default function ReportPage() {
                             <FormMessage />
                             </FormItem>
                         )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="media"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2">
+                                <Upload className="h-4 w-4" />
+                                <span>Upload Images/Videos</span>
+                              </FormLabel>
+                              <FormControl>
+                                <Input type="file" accept="image/*,video/*" multiple {...fileRef} />
+                              </FormControl>
+                              <FormDescription>
+                                Please upload relevant images or videos of the disaster.
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
                         <Button type="submit" className="w-full">Submit Report</Button>
                     </form>
