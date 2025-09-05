@@ -4,7 +4,7 @@
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { useEffect, memo } from 'react';
+import { useEffect, useState, memo } from 'react';
 
 // Fix for default icon issue with Webpack
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -18,19 +18,19 @@ L.Icon.Default.mergeOptions({
 
 interface MapViewProps {
   center: [number, number];
-  markerPosition: [number, number] | null;
   placeName: string;
 }
 
+// This component will handle map view changes
 function ChangeView({ center, zoom }: { center: [number, number], zoom: number }) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, zoom);
+    map.flyTo(center, zoom);
   }, [center, zoom, map]);
   return null;
 }
 
-function MapViewComponent({ center, markerPosition, placeName }: MapViewProps) {
+function MapViewComponent({ center, placeName }: MapViewProps) {
 
   return (
     <MapContainer center={center} zoom={13} scrollWheelZoom={false} style={{ height: '400px', width: '100%', borderRadius: '0.5rem' }}>
@@ -39,13 +39,11 @@ function MapViewComponent({ center, markerPosition, placeName }: MapViewProps) {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <ChangeView center={center} zoom={13} />
-      {markerPosition && (
-        <Marker position={markerPosition}>
+      <Marker position={center}>
           <Popup>
-            {placeName || `Lat: ${markerPosition[0].toFixed(4)}, Lon: ${markerPosition[1].toFixed(4)}`}
+            {placeName || `Lat: ${center[0].toFixed(4)}, Lon: ${center[1].toFixed(4)}`}
           </Popup>
-        </Marker>
-      )}
+      </Marker>
     </MapContainer>
   );
 }

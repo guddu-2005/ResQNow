@@ -41,15 +41,13 @@ export function HomeClient() {
   const [location, setLocation] = useState<Location | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>([20.5937, 78.9629]);
-  const [markerPosition, setMarkerPosition] = useState<[number, number] | null>(null);
-  const [searchedPlace, setSearchedPlace] = useState<string>('');
+  const [searchedPlace, setSearchedPlace] = useState<string>('India');
 
 
   const handleLocationSearch = (lat: number, lon: number, placeName: string) => {
     const newCenter: [number, number] = [lat, lon];
     setLocation({ latitude: lat, longitude: lon });
     setMapCenter(newCenter);
-    setMarkerPosition(newCenter);
     setSearchedPlace(placeName);
   };
 
@@ -58,10 +56,8 @@ export function HomeClient() {
       try {
         const weatherData = await getWeatherByCoords(lat, lon);
         setWeather(weatherData);
-        if(!markerPosition) {
-          setMapCenter([lat, lon]);
-          setMarkerPosition([lat, lon]);
-          setSearchedPlace(weatherData.name);
+        if(!location) { // Only set searched place if it's the initial load
+             setSearchedPlace(weatherData.name);
         }
       } catch (err) {
         setError('Could not fetch weather data.');
@@ -75,7 +71,9 @@ export function HomeClient() {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
+          const userLocation: [number, number] = [latitude, longitude];
           setLocation({ latitude, longitude });
+          setMapCenter(userLocation);
           fetchInitialData(latitude, longitude);
         },
         (err) => {
@@ -83,14 +81,12 @@ export function HomeClient() {
           console.error(err);
           // Fallback to default location if permission is denied
           fetchInitialData(mapCenter[0], mapCenter[1]);
-          setSearchedPlace('India');
         }
       );
     } else {
       setError('Geolocation is not supported by your browser.');
       // Fallback to default location
       fetchInitialData(mapCenter[0], mapCenter[1]);
-      setSearchedPlace('India');
     }
   }, [location]);
 
@@ -106,7 +102,7 @@ export function HomeClient() {
           </div>
           <Card className="w-full shadow-lg">
             <CardContent className="p-0">
-               <MapView center={mapCenter} markerPosition={markerPosition} placeName={searchedPlace} />
+               <MapView center={mapCenter} placeName={searchedPlace} />
             </CardContent>
           </Card>
         </div>
