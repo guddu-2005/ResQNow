@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Menu, User } from 'lucide-react';
+import { Menu, User, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -19,19 +19,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { useRouter } from 'next/navigation';
 
 const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/alerts', label: 'Alerts' },
   { href: '/report', label: 'Report' },
   { href: '/first-aid', label: 'First Aid' },
-  { href: '/dashboard', label: 'Dashboard' },
 ];
 
 export function Header() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
+  const router = useRouter();
 
   const NavLink = ({ href, label, className }: { href: string; label: string, className?: string }) => (
     <Link
@@ -72,6 +73,7 @@ export function Header() {
                   {navLinks.map((link) => (
                     <NavLink key={link.href} {...link} className="text-lg" />
                   ))}
+                   {user && <NavLink href="/dashboard" label="Dashboard" className="text-lg"/>}
                 </nav>
               </SheetContent>
             </Sheet>
@@ -85,6 +87,7 @@ export function Header() {
             {navLinks.map((link) => (
               <NavLink key={link.href} {...link} />
             ))}
+             {user && <NavLink href="/dashboard" label="Dashboard" />}
           </nav>
         </div>
 
@@ -111,6 +114,15 @@ export function Header() {
                     </p>
                   </div>
                 </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push('/dashboard')}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/settings')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={signOut}>
                   Sign out

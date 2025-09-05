@@ -51,7 +51,7 @@ export default function DashboardPage() {
         <Card className="w-full max-w-2xl shadow-xl rounded-xl transition-all hover:shadow-2xl hover:scale-105">
             <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-xl sm:text-2xl font-bold">
-                    <User className="h-7 w-7 text-primary"/>
+                    <UserIcon className="h-7 w-7 text-primary"/>
                     <span>Coming Soon</span>
                 </CardTitle>
             </CardHeader>
