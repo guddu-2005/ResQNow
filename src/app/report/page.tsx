@@ -4,7 +4,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -27,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Upload } from "lucide-react";
+import { motion } from 'framer-motion';
 
 const reportFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters.").max(50, "Name must be at most 50 characters."),
@@ -53,19 +53,28 @@ export default function ReportPage() {
   const fileRef = form.register("media");
 
   function onSubmit(data: ReportFormValues) {
-    // Future Integration: Implement API call to submit disaster report to a backend service like Firebase Firestore.
     console.log(data);
-
     toast({
-      title: "Report Submitted",
+      title: "Report Submitted Successfully!",
       description: "Thank you for helping your community. Your report has been received.",
+      variant: 'default',
+      className: 'bg-accent text-accent-foreground',
     });
-
     form.reset();
   }
+  
+  const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.1, type: 'spring', stiffness: 100 } },
+  };
 
   return (
-    <div className="container mx-auto px-4 py-12 md:px-6 lg:py-16">
+    <motion.div 
+      className="container mx-auto px-4 py-12 md:px-6 lg:py-16"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
         <div className="mx-auto max-w-2xl">
             <div className="space-y-2 text-center mb-12">
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl font-headline">
@@ -76,7 +85,7 @@ export default function ReportPage() {
                 </p>
             </div>
 
-            <Card className="shadow-lg">
+            <Card className="shadow-2xl rounded-xl">
                 <CardHeader>
                     <CardTitle>Disaster Report Form</CardTitle>
                 </CardHeader>
@@ -90,7 +99,7 @@ export default function ReportPage() {
                             <FormItem>
                             <FormLabel>Your Name</FormLabel>
                             <FormControl>
-                                <Input placeholder="John Doe" {...field} />
+                                <Input placeholder="John Doe" {...field} className="rounded-lg"/>
                             </FormControl>
                             <FormDescription>Please enter your full name.</FormDescription>
                             <FormMessage />
@@ -104,7 +113,7 @@ export default function ReportPage() {
                             <FormItem>
                             <FormLabel>Location</FormLabel>
                             <FormControl>
-                                <Input placeholder="e.g., Corner of Main St and 1st Ave, Springfield" {...field} />
+                                <Input placeholder="e.g., Corner of Main St and 1st Ave, Springfield" {...field} className="rounded-lg"/>
                             </FormControl>
                             <FormDescription>
                                 Provide a street address or a nearby landmark.
@@ -121,11 +130,11 @@ export default function ReportPage() {
                             <FormLabel>Disaster Type</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
-                                <SelectTrigger>
+                                <SelectTrigger className="rounded-lg">
                                     <SelectValue placeholder="Select a disaster type" />
                                 </SelectTrigger>
                                 </FormControl>
-                                <SelectContent>
+                                <SelectContent className="rounded-lg">
                                     <SelectItem value="Earthquake">Earthquake</SelectItem>
                                     <SelectItem value="Flood">Flood</SelectItem>
                                     <SelectItem value="Fire">Fire</SelectItem>
@@ -150,7 +159,7 @@ export default function ReportPage() {
                             <FormControl>
                                 <Textarea
                                 placeholder="Describe the situation, including any immediate dangers or people in need."
-                                className="resize-y min-h-[100px]"
+                                className="resize-y min-h-[120px] rounded-lg"
                                 {...field}
                                 />
                             </FormControl>
@@ -171,7 +180,7 @@ export default function ReportPage() {
                                 <span>Upload Images/Videos</span>
                               </FormLabel>
                               <FormControl>
-                                <Input type="file" accept="image/*,video/*" multiple {...fileRef} />
+                                <Input type="file" accept="image/*,video/*" multiple {...fileRef} className="rounded-lg file:text-primary file:font-semibold" />
                               </FormControl>
                               <FormDescription>
                                 Please upload relevant images or videos of the disaster.
@@ -180,12 +189,12 @@ export default function ReportPage() {
                             </FormItem>
                           )}
                         />
-                        <Button type="submit" className="w-full">Submit Report</Button>
+                        <Button type="submit" className="w-full text-lg py-6 rounded-lg shadow-lg transition-transform active:scale-95 hover:scale-105">Submit Report</Button>
                     </form>
                     </Form>
                 </CardContent>
             </Card>
         </div>
-    </div>
+    </motion.div>
   );
 }

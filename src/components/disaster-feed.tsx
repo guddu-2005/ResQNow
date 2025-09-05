@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Rss, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { motion } from 'framer-motion';
 
 type FeedItem = {
   title?: string;
@@ -25,7 +26,6 @@ async function getFeed(): Promise<FeedItem[]> {
       },
     });
 
-    // CORS proxy to avoid browser-side restrictions
     const proxyUrl = 'https://api.allorigins.win/raw?url=';
     const feedUrl = 'https://www.gdacs.org/rss.aspx';
     
@@ -54,21 +54,34 @@ export function DisasterFeed() {
     loadFeed();
   }, []);
 
+  const cardVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: (i: number) => ({
+      y: 0,
+      opacity: 1,
+      transition: {
+        delay: i * 0.15,
+        type: 'spring',
+        stiffness: 100,
+      },
+    }),
+  };
+
   if (loading) {
     return (
       <>
         {[...Array(3)].map((_, i) => (
-          <Card key={i} className="flex flex-col shadow-sm">
+          <Card key={i} className="flex flex-col rounded-xl shadow-md">
             <CardHeader>
-              <Skeleton className="h-6 w-3/4" />
-              <Skeleton className="h-4 w-1/2 mt-2" />
+              <Skeleton className="h-6 w-3/4 rounded-lg" />
+              <Skeleton className="h-4 w-1/2 mt-2 rounded-lg" />
             </CardHeader>
             <CardContent className="flex-grow space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-full rounded-lg" />
+              <Skeleton className="h-4 w-5/6 rounded-lg" />
             </CardContent>
             <CardFooter>
-              <Skeleton className="h-6 w-20" />
+              <Skeleton className="h-8 w-24 rounded-lg" />
             </CardFooter>
           </Card>
         ))}
@@ -78,7 +91,7 @@ export function DisasterFeed() {
 
   if (error) {
     return (
-      <Card className="col-span-1 sm:col-span-2 lg:col-span-3 bg-destructive/10 border-destructive">
+      <Card className="col-span-1 sm:col-span-2 lg:col-span-3 bg-destructive/10 border-destructive rounded-xl shadow-lg">
         <CardHeader className="flex flex-row items-center gap-4">
           <AlertTriangle className="h-8 w-8 text-destructive" />
           <div>
@@ -97,32 +110,39 @@ export function DisasterFeed() {
         const creator = item.creator || 'GDACS';
         
         return (
-          <Card
+          <motion.div
             key={item.link || index}
-            className="flex flex-col shadow-sm hover:shadow-md transition-shadow"
+            custom={index}
+            initial="hidden"
+            animate="visible"
+            variants={cardVariants}
           >
-            <CardHeader>
-              <CardTitle className="flex items-start gap-2">
-                <Rss className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
-                <span>{item.title || 'Untitled Update'}</span>
-              </CardTitle>
-              <CardDescription>
-                {creator} - {pubDate}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow">
-              <p className="text-muted-foreground text-sm line-clamp-3">
-                {item.contentSnippet || 'No description available.'}
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button variant="link" className="p-0 h-auto" asChild>
-                <Link href={item.link || '#'} target="_blank" rel="noopener noreferrer">
-                  Read More
-                </Link>
-              </Button>
-            </CardFooter>
-          </Card>
+            <Card
+              className="flex flex-col rounded-xl shadow-md h-full transition-all duration-300 hover:shadow-xl hover:scale-105"
+            >
+              <CardHeader>
+                <CardTitle className="flex items-start gap-3">
+                  <Rss className="h-7 w-7 text-primary mt-1 flex-shrink-0" />
+                  <span className='text-lg'>{item.title || 'Untitled Update'}</span>
+                </CardTitle>
+                <CardDescription>
+                  {creator} - {pubDate}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-muted-foreground text-sm line-clamp-4">
+                  {item.contentSnippet || 'No description available.'}
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Button variant="link" className="p-0 h-auto font-semibold" asChild>
+                  <Link href={item.link || '#'} target="_blank" rel="noopener noreferrer">
+                    Read More
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          </motion.div>
         );
       })}
     </>

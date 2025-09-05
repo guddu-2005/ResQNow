@@ -1,9 +1,10 @@
+
+'use client';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
+import { motion } from 'framer-motion';
 
 export default function AlertsPage() {
-  // Placeholder for real-time alerts
-  // Future Integration: This data will be fetched from a disaster alert API or Firebase based on user location.
   const alerts = [
     {
       id: "alert-001",
@@ -31,35 +32,65 @@ export default function AlertsPage() {
     },
   ];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { type: 'spring', stiffness: 100 },
+    },
+  };
+
+
   return (
-    <div className="container mx-auto px-4 py-12 md:px-6 lg:py-16">
+    <motion.div 
+      className="container mx-auto px-4 py-12 md:px-6 lg:py-16"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
       <div className="mx-auto max-w-3xl">
-        <div className="space-y-4 text-center">
+        <motion.div className="space-y-4 text-center" variants={itemVariants}>
           <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl font-headline">
             Real-time Alerts
           </h1>
           <p className="text-muted-foreground md:text-xl">
             Stay informed about active threats in your area.
           </p>
-        </div>
-        <div className="mt-12 space-y-6">
+        </motion.div>
+        <motion.div 
+          className="mt-12 space-y-6"
+          variants={containerVariants}
+        >
           {alerts.map((alert) => (
-            <Alert key={alert.id} variant={alert.severity === 'High' ? 'destructive' : 'default'} className="shadow-md">
-              <AlertTriangle className="h-4 w-4" />
-              <div className="flex justify-between items-start">
-                  <div>
-                    <AlertTitle>{alert.title}</AlertTitle>
-                    <AlertDescription>{alert.description}</AlertDescription>
-                  </div>
-                  <div className="text-right text-xs text-muted-foreground whitespace-nowrap pl-4">
-                      <p>{alert.location}</p>
-                      <p>{alert.time}</p>
-                  </div>
-              </div>
-            </Alert>
+            <motion.div key={alert.id} variants={itemVariants}>
+              <Alert variant={alert.severity === 'High' ? 'destructive' : 'default'} className="shadow-lg rounded-xl transition-transform hover:scale-105">
+                <AlertTriangle className="h-5 w-5" />
+                <div className="flex justify-between items-start ml-2">
+                    <div>
+                      <AlertTitle className="font-bold text-lg">{alert.title}</AlertTitle>
+                      <AlertDescription className="mt-1">{alert.description}</AlertDescription>
+                    </div>
+                    <div className="text-right text-xs text-muted-foreground whitespace-nowrap pl-4">
+                        <p>{alert.location}</p>
+                        <p>{alert.time}</p>
+                    </div>
+                </div>
+              </Alert>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }

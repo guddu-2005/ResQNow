@@ -1,3 +1,5 @@
+
+'use client';
 import {
   Accordion,
   AccordionContent,
@@ -5,6 +7,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { LifeBuoy } from "lucide-react";
+import { motion } from 'framer-motion';
 
 export default function FirstAidPage() {
   const firstAidGuides = [
@@ -37,10 +40,34 @@ export default function FirstAidPage() {
     },
   ];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { type: 'spring', stiffness: 100 },
+    },
+  };
+
   return (
-    <div className="container mx-auto px-4 py-12 md:px-6 lg:py-16">
+    <motion.div 
+      className="container mx-auto px-4 py-12 md:px-6 lg:py-16"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
       <div className="mx-auto max-w-3xl">
-        <div className="space-y-4 text-center">
+        <motion.div className="space-y-4 text-center" variants={itemVariants}>
             <LifeBuoy className="mx-auto h-12 w-12 text-primary" />
           <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl font-headline">
             First Aid Guides
@@ -48,13 +75,13 @@ export default function FirstAidPage() {
           <p className="text-muted-foreground md:text-xl">
             Essential knowledge for emergency situations.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="mt-12">
-          <Accordion type="single" collapsible className="w-full">
+        <motion.div className="mt-12" variants={itemVariants}>
+          <Accordion type="single" collapsible className="w-full space-y-4">
             {firstAidGuides.map((guide) => (
-              <AccordionItem key={guide.type} value={guide.type} className="bg-card shadow-sm rounded-lg mb-4">
-                <AccordionTrigger className="px-6 py-4 text-lg font-medium hover:no-underline">
+              <AccordionItem key={guide.type} value={guide.type} className="bg-card shadow-lg rounded-xl border-none transition-shadow hover:shadow-xl">
+                <AccordionTrigger className="px-6 py-4 text-lg font-bold hover:no-underline rounded-t-xl">
                   {guide.type}
                 </AccordionTrigger>
                 <AccordionContent className="px-6 pb-6">
@@ -67,8 +94,8 @@ export default function FirstAidPage() {
               </AccordionItem>
             ))}
           </Accordion>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }
