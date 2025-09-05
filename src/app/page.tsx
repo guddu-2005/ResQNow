@@ -2,7 +2,7 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { DisasterFeed } from '@/components/disaster-feed';
+import { NewsFeed } from '@/components/news-feed';
 import { motion } from 'framer-motion';
 import { Weather } from '@/components/weather';
 
@@ -87,12 +87,7 @@ export default function Home() {
         transition={{ duration: 0.5 }}
       >
         <div className="container px-4 md:px-6">
-          <h2 className="text-3xl font-bold tracking-tighter text-center sm:text-4xl md:text-5xl font-headline mb-12 text-foreground">
-            Latest News & Updates
-          </h2>
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            <DisasterFeed />
-          </div>
+           <NewsFeed />
         </div>
       </motion.section>
     </motion.div>
