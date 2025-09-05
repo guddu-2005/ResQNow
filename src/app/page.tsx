@@ -2,6 +2,7 @@
 import {Button} from '@/components/ui/button';
 import Link from 'next/link';
 import { HomeClient } from '@/components/home-client';
+import { DisasterFeed } from '@/components/disaster-feed';
 
 
 export default function Home() {
@@ -31,7 +32,9 @@ export default function Home() {
         </div>
       </section>
 
-      <HomeClient />
+      <HomeClient>
+        <DisasterFeed />
+      </HomeClient>
       
     </>
   );

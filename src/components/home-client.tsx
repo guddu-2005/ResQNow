@@ -4,11 +4,12 @@
 import {
   Card,
   CardContent,
+  CardHeader,
+  CardTitle,
 } from '@/components/ui/card';
-import {Map, Wind, Thermometer, Cloud, Rss} from 'lucide-react';
+import {Map, Wind, Thermometer, Cloud} from 'lucide-react';
 import {useEffect, useState} from 'react';
 import {getWeatherByCoords} from '@/services/weather';
-import { DisasterFeed } from '@/components/disaster-feed';
 
 type WeatherData = {
   name: string;
@@ -29,7 +30,7 @@ type Location = {
   longitude: number;
 }
 
-export function HomeClient() {
+export function HomeClient({ children }: { children: React.ReactNode }) {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [location, setLocation] = useState<Location | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -89,7 +90,7 @@ export function HomeClient() {
             Latest News & Updates
           </h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-             <DisasterFeed latitude={location?.latitude} longitude={location?.longitude} />
+             {children}
           </div>
         </div>
       </section>
@@ -152,4 +153,3 @@ export function HomeClient() {
     </>
   );
 }
-
