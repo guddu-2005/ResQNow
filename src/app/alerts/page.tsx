@@ -1,7 +1,7 @@
 
 'use client';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, Info, ShieldWarning } from "lucide-react";
+import { AlertTriangle, Info, ShieldAlert } from "lucide-react";
 import { motion } from 'framer-motion';
 import { cn } from "@/lib/utils";
 
@@ -62,7 +62,7 @@ export default function AlertsPage() {
         };
       case 'Medium':
         return {
-          Icon: ShieldWarning,
+          Icon: ShieldAlert,
           className: "border-orange-500/50 bg-orange-500/10 text-orange-700 dark:text-orange-400",
           iconColor: "text-orange-500",
         };
