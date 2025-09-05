@@ -4,7 +4,7 @@
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { useEffect } from 'react';
+import { useEffect, memo } from 'react';
 
 // Fix for default icon issue with Webpack
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -30,7 +30,7 @@ function ChangeView({ center, zoom }: { center: [number, number], zoom: number }
   return null;
 }
 
-export function MapView({ center, markerPosition, placeName }: MapViewProps) {
+function MapViewComponent({ center, markerPosition, placeName }: MapViewProps) {
 
   return (
     <MapContainer center={center} zoom={13} scrollWheelZoom={false} style={{ height: '400px', width: '100%', borderRadius: '0.5rem' }}>
@@ -49,3 +49,6 @@ export function MapView({ center, markerPosition, placeName }: MapViewProps) {
     </MapContainer>
   );
 }
+
+const MapView = memo(MapViewComponent);
+export default MapView;

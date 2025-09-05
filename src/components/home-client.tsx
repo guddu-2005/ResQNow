@@ -12,8 +12,9 @@ import {useEffect, useState} from 'react';
 import {getWeatherByCoords} from '@/services/weather';
 import { SearchBar } from './SearchBar';
 import dynamic from 'next/dynamic';
+import { DisasterFeed } from './disaster-feed';
 
-const MapView = dynamic(() => import('@/components/map-view').then((mod) => mod.MapView), {
+const MapView = dynamic(() => import('@/components/map-view'), {
   ssr: false,
 });
 
@@ -118,7 +119,7 @@ export function HomeClient({ children }: { children: React.ReactNode }) {
             Latest News & Updates
           </h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-             {children}
+             <DisasterFeed latitude={location?.latitude} longitude={location?.longitude} />
           </div>
         </div>
       </section>
