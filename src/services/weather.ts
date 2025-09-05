@@ -1,12 +1,17 @@
 
+
 type WeatherData = {
   name: string;
   weather: {
     description: string;
+    icon: string;
   }[];
   main: {
     temp: number;
     humidity: number;
+  };
+  wind: {
+    speed: number;
   };
 };
 
@@ -23,7 +28,7 @@ export async function getWeather(lat: number, lon: number): Promise<string> {
         throw new Error(`Weather API request failed with status ${res.status}`);
     }
     const data: WeatherData = await res.json();
-    return `Weather in ${data.name}: ${data.weather[0].description}, Temp: ${data.main.temp}°C, Humidity: ${data.main.humidity}%.`;
+    return `Weather in ${data.name}: ${data.weather[0].description}, Temp: ${Math.round(data.main.temp)}°C, Humidity: ${data.main.humidity}%, Wind: ${data.wind.speed.toFixed(1)} m/s.`;
   } catch (error) {
     console.error("Failed to fetch weather:", error);
     throw new Error("Could not retrieve weather information at this time.");
