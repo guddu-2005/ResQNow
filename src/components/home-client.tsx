@@ -12,7 +12,6 @@ import {useEffect, useState} from 'react';
 import {getWeatherByCoords} from '@/services/weather';
 import { SearchBar } from './SearchBar';
 import dynamic from 'next/dynamic';
-import { DisasterFeed } from './disaster-feed';
 
 const MapView = dynamic(() => import('@/components/map-view'), {
   ssr: false,
@@ -37,7 +36,7 @@ type Location = {
   longitude: number;
 }
 
-export function HomeClient({ children }: { children: React.ReactNode }) {
+export function HomeClient() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [location, setLocation] = useState<Location | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -110,17 +109,6 @@ export function HomeClient({ children }: { children: React.ReactNode }) {
                <MapView center={mapCenter} markerPosition={markerPosition} placeName={searchedPlace} />
             </CardContent>
           </Card>
-        </div>
-      </section>
-
-      <section id="news" className="w-full py-12 md:py-24 lg:py-32">
-        <div className="container px-4 md:px-6">
-          <h2 className="text-3xl font-bold tracking-tighter text-center sm:text-4xl md:text-5xl font-headline mb-8">
-            Latest News & Updates
-          </h2>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-             <DisasterFeed latitude={location?.latitude} longitude={location?.longitude} />
-          </div>
         </div>
       </section>
 
