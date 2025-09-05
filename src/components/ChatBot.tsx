@@ -118,13 +118,13 @@ const ChatBotComponent = () => {
     setIsTyping(false);
   }, []);
 
-  const handleNewChat = () => {
+  const handleNewChat = useCallback(() => {
     stopTyping();
     setMessages(initialMessages);
     setIsLoading(false);
-  };
+  }, [stopTyping]);
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = useCallback(async () => {
     if (!inputValue.trim()) return;
 
     stopTyping();
@@ -216,7 +216,7 @@ const ChatBotComponent = () => {
        setIsLoading(false);
        setIsTyping(false);
     }
-  };
+  }, [inputValue, messages, stopTyping, lastNews, lastWeather, getCurrentPosition]);
 
   useEffect(() => {
     return () => {
