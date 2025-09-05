@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import {
@@ -64,6 +64,7 @@ export function Header() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-[300px] sm:w-[360px]">
+                <SheetTitle className="sr-only">Main Menu</SheetTitle>
                 <div className="p-4">
                   <Logo />
                 </div>
