@@ -1,8 +1,9 @@
 
 'use client';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Info, ShieldWarning } from "lucide-react";
 import { motion } from 'framer-motion';
+import { cn } from "@/lib/utils";
 
 export default function AlertsPage() {
   const alerts = [
@@ -51,6 +52,35 @@ export default function AlertsPage() {
     },
   };
 
+  const getSeverityStyles = (severity: string) => {
+    switch (severity) {
+      case 'High':
+        return {
+          Icon: AlertTriangle,
+          className: "border-red-500/50 bg-red-500/10 text-red-700 dark:text-red-400",
+          iconColor: "text-red-500",
+        };
+      case 'Medium':
+        return {
+          Icon: ShieldWarning,
+          className: "border-orange-500/50 bg-orange-500/10 text-orange-700 dark:text-orange-400",
+          iconColor: "text-orange-500",
+        };
+      case 'Low':
+        return {
+          Icon: Info,
+          className: "border-blue-500/50 bg-blue-500/10 text-blue-700 dark:text-blue-400",
+          iconColor: "text-blue-500",
+        };
+      default:
+        return {
+          Icon: Info,
+          className: "border-gray-500/50 bg-gray-500/10 text-gray-700 dark:text-gray-400",
+          iconColor: "text-gray-500",
+        };
+    }
+  };
+
 
   return (
     <motion.div 
@@ -72,23 +102,26 @@ export default function AlertsPage() {
           className="mt-12 space-y-6"
           variants={containerVariants}
         >
-          {alerts.map((alert) => (
-            <motion.div key={alert.id} variants={itemVariants}>
-              <Alert variant={alert.severity === 'High' ? 'destructive' : 'default'} className="shadow-lg rounded-xl transition-transform hover:scale-105">
-                <AlertTriangle className="h-5 w-5" />
-                <div className="flex flex-col sm:flex-row justify-between items-start ml-2 gap-2 sm:gap-4">
-                    <div className="flex-grow">
-                      <AlertTitle className="font-bold text-lg">{alert.title}</AlertTitle>
-                      <AlertDescription className="mt-1">{alert.description}</AlertDescription>
-                    </div>
-                    <div className="text-left sm:text-right text-xs text-muted-foreground whitespace-nowrap pt-1 sm:pt-0">
-                        <p>{alert.location}</p>
-                        <p>{alert.time}</p>
-                    </div>
-                </div>
-              </Alert>
-            </motion.div>
-          ))}
+          {alerts.map((alert) => {
+            const { Icon, className, iconColor } = getSeverityStyles(alert.severity);
+            return (
+              <motion.div key={alert.id} variants={itemVariants}>
+                <Alert className={cn("shadow-lg rounded-lg transition-transform hover:scale-[1.02] hover:shadow-xl", className)}>
+                  <Icon className={cn("h-5 w-5", iconColor)} />
+                  <div className="flex flex-col sm:flex-row justify-between items-start ml-2 gap-2 sm:gap-4">
+                      <div className="flex-grow">
+                        <AlertTitle className="font-bold text-lg">{alert.title}</AlertTitle>
+                        <AlertDescription className="mt-1">{alert.description}</AlertDescription>
+                      </div>
+                      <div className="text-left sm:text-right text-xs text-muted-foreground whitespace-nowrap pt-1 sm:pt-0">
+                          <p>{alert.location}</p>
+                          <p>{alert.time}</p>
+                      </div>
+                  </div>
+                </Alert>
+              </motion.div>
+            )
+          })}
         </motion.div>
       </div>
     </motion.div>

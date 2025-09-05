@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { NewsFeed } from '@/components/news-feed';
 import { motion } from 'framer-motion';
 import { Weather } from '@/components/weather';
+import { ArrowRight } from 'lucide-react';
 
 export default function Home() {
   const containerVariants = {
@@ -32,13 +33,14 @@ export default function Home() {
   return (
     <motion.div initial="hidden" animate="visible" variants={containerVariants}>
       <motion.section
-        className="w-full py-20 md:py-32 lg:py-40 bg-gradient-to-b from-background to-secondary"
+        className="w-full py-24 md:py-32 lg:py-48 bg-grid-slate-100/[0.05] dark:bg-grid-slate-900/[0.1] relative"
         variants={itemVariants}
       >
-        <div className="container px-4 md:px-6">
+        <div className="absolute inset-0 bg-gradient-to-b from-background to-transparent"></div>
+        <div className="container px-4 md:px-6 relative z-10">
           <div className="flex flex-col items-center space-y-6 text-center">
             <motion.div className="space-y-4" variants={itemVariants}>
-              <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl/none font-headline text-foreground">
+              <h1 className="text-4xl font-black tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl/none font-headline text-foreground">
                 Rescue.ai
               </h1>
               <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
@@ -49,8 +51,11 @@ export default function Home() {
               className="flex flex-col sm:flex-row items-center gap-4" 
               variants={itemVariants}
             >
-              <Button asChild size="lg" className="w-full sm:w-auto shadow-lg transition-transform active:scale-95 hover:scale-105">
-                <Link href="/report">Report a Disaster</Link>
+              <Button asChild size="lg" className="w-full sm:w-auto shadow-lg transition-transform active:scale-95 hover:scale-105 group">
+                <Link href="/report">
+                  <span>Report a Disaster</span>
+                  <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Link>
               </Button>
               <Button variant="secondary" size="lg" asChild className="w-full sm:w-auto shadow-lg transition-transform active:scale-95 hover:scale-105">
                 <Link href="/alerts">View Alerts</Link>
@@ -62,7 +67,7 @@ export default function Home() {
 
       <motion.section
         id="weather"
-        className="w-full py-20 md:py-24 lg:py-32 bg-background"
+        className="w-full py-20 md:py-24 lg:py-32 bg-secondary/50"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true, amount: 0.2 }}
@@ -70,7 +75,7 @@ export default function Home() {
       >
         <div className="container px-4 md:px-6">
           <h2 className="text-3xl font-bold tracking-tighter text-center sm:text-4xl md:text-5xl font-headline mb-12 text-foreground">
-            Current Weather
+            Local Weather Conditions
           </h2>
           <div className="flex justify-center">
             <Weather />
@@ -80,7 +85,7 @@ export default function Home() {
 
       <motion.section
         id="news"
-        className="w-full py-20 md:py-24 lg:py-32 bg-secondary"
+        className="w-full py-20 md:py-24 lg:py-32 bg-background"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true, amount: 0.2 }}

@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Upload } from "lucide-react";
 import { motion } from 'framer-motion';
@@ -58,7 +58,6 @@ export default function ReportPage() {
       title: "Report Submitted Successfully!",
       description: "Thank you for helping your community. Your report has been received.",
       variant: 'default',
-      className: 'bg-accent text-accent-foreground',
     });
     form.reset();
   }
@@ -85,9 +84,10 @@ export default function ReportPage() {
                 </p>
             </div>
 
-            <Card className="shadow-2xl rounded-xl">
+            <Card className="shadow-xl rounded-lg">
                 <CardHeader>
                     <CardTitle className="text-xl sm:text-2xl">Disaster Report Form</CardTitle>
+                    <CardDescription>Fill out the details below to the best of your ability.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
@@ -189,7 +189,7 @@ export default function ReportPage() {
                             </FormItem>
                           )}
                         />
-                        <Button type="submit" className="w-full text-lg py-6 rounded-lg shadow-lg transition-transform active:scale-95 hover:scale-105">Submit Report</Button>
+                        <Button type="submit" size="lg" className="w-full text-lg py-6 rounded-lg shadow-lg transition-transform active:scale-95 hover:scale-105">Submit Report</Button>
                     </form>
                     </Form>
                 </CardContent>

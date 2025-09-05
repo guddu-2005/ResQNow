@@ -80,8 +80,8 @@ export default function FirstAidPage() {
         <motion.div className="mt-12" variants={itemVariants}>
           <Accordion type="single" collapsible className="w-full space-y-4">
             {firstAidGuides.map((guide) => (
-              <AccordionItem key={guide.type} value={guide.type} className="bg-card shadow-lg rounded-xl border-none transition-shadow hover:shadow-xl">
-                <AccordionTrigger className="px-6 py-4 text-lg font-bold hover:no-underline rounded-t-xl">
+              <AccordionItem key={guide.type} value={guide.type} className="bg-card shadow-lg rounded-lg border-none transition-shadow hover:shadow-xl">
+                <AccordionTrigger className="px-6 py-4 text-lg font-bold hover:no-underline rounded-t-lg">
                   {guide.type}
                 </AccordionTrigger>
                 <AccordionContent className="px-6 pb-6">
