@@ -7,12 +7,12 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from '@/components/ui/card';
-import {Map, Newspaper, Wind, Thermometer, Cloud} from 'lucide-react';
+import {Map, Wind, Thermometer, Cloud, Rss} from 'lucide-react';
 import Link from 'next/link';
 import {useEffect, useState} from 'react';
 import {getWeatherByCoords} from '@/services/weather';
+import { DisasterFeed } from '@/components/disaster-feed';
 
 type WeatherData = {
   name: string;
@@ -54,27 +54,6 @@ export default function Home() {
       setError('Geolocation is not supported by your browser.');
     }
   }, []);
-
-  const newsItems = [
-    {
-      id: 1,
-      title: 'City Prepares for Hurricane Season with New Evacuation Routes',
-      source: 'Local News Channel',
-      time: '2h ago',
-    },
-    {
-      id: 2,
-      title: 'Wildfire Contained After Burning 500 Acres in National Forest',
-      source: 'National News Wire',
-      time: '8h ago',
-    },
-    {
-      id: 3,
-      title: 'Volunteers Needed for Flood Relief Efforts Downtown',
-      source: 'Community Bulletin',
-      time: '1d ago',
-    },
-  ];
 
   return (
     <>
@@ -129,36 +108,8 @@ export default function Home() {
           <h2 className="text-3xl font-bold tracking-tighter text-center sm:text-4xl md:text-5xl font-headline mb-8">
             Latest News & Updates
           </h2>
-          {/* Placeholder for News Feed */}
-          {/* Future Integration: News API for fetching real-time articles */}
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {newsItems.map(item => (
-              <Card
-                key={item.id}
-                className="flex flex-col shadow-sm hover:shadow-md transition-shadow"
-              >
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Newspaper className="h-6 w-6 text-primary" />
-                    <span>{item.title}</span>
-                  </CardTitle>
-                  <CardDescription>
-                    {item.source} - {item.time}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className="text-muted-foreground text-sm">
-                    Dummy description: This is a placeholder for the news
-                    article summary. More details will be shown here.
-                  </p>
-                </CardContent>
-                <div className="p-6 pt-0">
-                  <Button variant="link" className="p-0 h-auto">
-                    Read More
-                  </Button>
-                </div>
-              </Card>
-            ))}
+             <DisasterFeed />
           </div>
         </div>
       </section>
