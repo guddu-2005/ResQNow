@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {Wind, Thermometer, Cloud, Loader2} from 'lucide-react';
-import {useEffect, useState, useCallback} from 'react';
+import {useEffect, useState, useCallback, useMemo} from 'react';
 import {getWeatherByCoords} from '@/services/weather';
 import { SearchBar } from './SearchBar';
 import dynamic from 'next/dynamic';
@@ -47,7 +47,6 @@ export function HomeClient() {
     try {
       const weatherData = await getWeatherByCoords(lat, lon);
       setWeather(weatherData);
-      // Don't update location name from weather data to avoid extra re-renders
     } catch (err) {
       setError('Could not fetch weather data.');
       console.error(err);
@@ -59,34 +58,37 @@ export function HomeClient() {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          setLocation({ lat: latitude, lon: longitude, name: 'Your Location' });
+          const newLocation = { lat: latitude, lon: longitude, name: 'Your Location' };
+          setLocation(newLocation);
           fetchWeather(latitude, longitude);
         },
         (err) => {
           setError('Please enable location access to see local weather and disaster alerts.');
           console.error(err);
           // Fallback to a default location if permission is denied
-          const defaultLat = 20.5937;
-          const defaultLon = 78.9629;
-          setLocation({ lat: defaultLat, lon: defaultLon, name: 'India' });
-          fetchWeather(defaultLat, defaultLon); 
+          const defaultLocation = { lat: 20.5937, lon: 78.9629, name: 'India' };
+          setLocation(defaultLocation);
+          fetchWeather(defaultLocation.lat, defaultLocation.lon); 
         }
       );
     } else {
       setError('Geolocation is not supported by your browser.');
       // Fallback to a default location
-      const defaultLat = 20.5937;
-      const defaultLon = 78.9629;
-      setLocation({ lat: defaultLat, lon: defaultLon, name: 'India' });
-      fetchWeather(defaultLat, defaultLon);
+      const defaultLocation = { lat: 20.5937, lon: 78.9629, name: 'India' };
+      setLocation(defaultLocation);
+      fetchWeather(defaultLocation.lat, defaultLocation.lon);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run only once on initial mount
+  }, [fetchWeather]);
 
   const handleLocationSearch = (lat: number, lon: number, placeName: string) => {
     setLocation({ lat, lon, name: placeName });
     fetchWeather(lat, lon);
   };
+  
+  const memoizedMapView = useMemo(() => {
+    if (!location) return null;
+    return <MapView center={[location.lat, location.lon]} placeName={location.name} />;
+  }, [location]);
 
   return (
     <>
@@ -100,9 +102,7 @@ export function HomeClient() {
           </div>
           <Card className="w-full shadow-lg">
             <CardContent className="p-0">
-               {location ? (
-                <MapView center={[location.lat, location.lon]} placeName={location.name} />
-               ) : (
+               {memoizedMapView || (
                 <div className="h-[400px] w-full bg-muted flex items-center justify-center rounded-lg">
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
