@@ -41,6 +41,7 @@ export default function SettingsPage() {
 
   const fetchSettings = useCallback(async (userId: string, retries = 3) => {
     setIsLoading(true);
+    let shouldRetry = false;
     try {
       const settingsDocRef = doc(db, 'users', userId);
       const docSnap = await getDoc(settingsDocRef);
@@ -51,7 +52,7 @@ export default function SettingsPage() {
       }
     } catch (error: any) {
       if ((error.code === 'failed-precondition' || error.message.includes('offline')) && retries > 0) {
-        // Retry if Firestore is initializing or client is temporarily offline
+        shouldRetry = true;
         setTimeout(() => fetchSettings(userId, retries - 1), 1000);
         return;
       }
@@ -62,9 +63,9 @@ export default function SettingsPage() {
         description: "Could not fetch your settings.",
       });
     } finally {
-      if (retries === 0 || !((error: any) => error.code === 'failed-precondition' || error.message.includes('offline'))(null)) {
-        setIsLoading(false);
-      }
+        if (!shouldRetry) {
+            setIsLoading(false);
+        }
     }
   }, [setTheme, toast]);
 
@@ -274,3 +275,5 @@ export default function SettingsPage() {
     </motion.div>
   );
 }
+
+    
