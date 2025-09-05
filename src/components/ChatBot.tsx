@@ -72,10 +72,11 @@ const ChatBotComponent = () => {
   }, [isOpen, scrollToBottom]);
 
   useEffect(() => {
-    if (isTyping || !showScrollDown) {
+    // Only auto-scroll if the user isn't scrolled up
+    if ((isTyping || isLoading) && !showScrollDown) {
         scrollToBottom();
     }
-  }, [messages, isTyping, showScrollDown, scrollToBottom]);
+  }, [messages, isTyping, isLoading, showScrollDown, scrollToBottom]);
 
 
   const getCurrentPosition = useCallback((): Promise<GeolocationPosition> => {
@@ -242,7 +243,7 @@ const ChatBotComponent = () => {
                         </div>
                       </motion.div>
                     ))}
-                     {isLoading && (
+                     {isLoading && !isTyping && (
                       <motion.div 
                         className="flex items-start gap-3 justify-start"
                         initial={{ opacity: 0, y: 10 }}
@@ -259,24 +260,6 @@ const ChatBotComponent = () => {
                     )}
                   </div>
                 </CardContent>
-
-                <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-auto">
-                    <AnimatePresence>
-                    {isTyping && (
-                        <motion.div
-                         initial={{ opacity: 0, y: 10 }}
-                         animate={{ opacity: 1, y: 0 }}
-                         exit={{ opacity: 0, y: 10 }}
-                         transition={{ duration: 0.2 }}
-                        >
-                        <Button variant="outline" size="sm" onClick={stopTyping} className="bg-background shadow-lg rounded-full">
-                            <Square className="mr-2 h-4 w-4"/>
-                            Stop Generating
-                        </Button>
-                        </motion.div>
-                    )}
-                    </AnimatePresence>
-                </div>
 
                 <AnimatePresence>
                     {showScrollDown && (
@@ -305,9 +288,42 @@ const ChatBotComponent = () => {
                           disabled={isLoading || isTyping}
                           className="flex-1 rounded-full px-4"
                       />
-                      <Button onClick={handleSendMessage} disabled={isLoading || isTyping || !inputValue.trim()} className="rounded-full">
-                          <Send size={16} />
-                      </Button>
+                       <AnimatePresence mode="wait">
+                        {isTyping ? (
+                          <motion.div
+                            key="stop"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <Button
+                              onClick={stopTyping}
+                              variant="destructive"
+                              className="rounded-full"
+                            >
+                              <Square size={16} className="mr-2" />
+                              Stop
+                            </Button>
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="send"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <Button
+                              onClick={handleSendMessage}
+                              disabled={isLoading || !inputValue.trim()}
+                              className="rounded-full"
+                            >
+                              <Send size={16} />
+                            </Button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                   </div>
                 </CardFooter>
               </Card>
