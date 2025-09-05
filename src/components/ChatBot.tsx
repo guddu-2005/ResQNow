@@ -14,7 +14,6 @@ type Message = {
   id: number;
   sender: 'user' | 'bot';
   text: string;
-  isTyping?: boolean;
 };
 
 type CachedWeather = {
@@ -36,15 +35,18 @@ export function ChatBot() {
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const [lastWeather, setLastWeather] = useState<CachedWeather | null>(null);
 
   const chatBodyRef = useRef<HTMLDivElement>(null);
+  const endOfMessagesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (chatBodyRef.current) {
-      chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+    if (isOpen || isTyping) {
+      endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isOpen]);
+  }, [messages, isOpen, isTyping]);
+
 
   const getCurrentPosition = useCallback((): Promise<GeolocationPosition> => {
     return new Promise((resolve, reject) => {
@@ -71,17 +73,19 @@ export function ChatBot() {
 
     try {
       let botResponseText = '';
+      let geminiPrompt = '';
+
       if (isWeatherQuery) {
         const now = Date.now();
         if (lastWeather && (now - lastWeather.timestamp < WEATHER_CACHE_DURATION)) {
-            const geminiPrompt = `The user asked: "${userMessageText}". The current cached weather is: "${lastWeather.data}". Please answer the user's question based on this weather data.`;
+             geminiPrompt = `The user asked: "${userMessageText}". The current cached weather is: "${lastWeather.data}". Please answer the user's question based on this weather data. Format your response as a natural, conversational paragraph. Do not use markdown, bullet points, or asterisks.`;
             botResponseText = await askGemini(geminiPrompt);
         } else {
           try {
             const position = await getCurrentPosition();
             const weatherInfo = await getWeather(position.coords.latitude, position.coords.longitude);
             setLastWeather({ data: weatherInfo, timestamp: Date.now() });
-            const geminiPrompt = `The user asked: "${userMessageText}". The current weather is: "${weatherInfo}". Please answer the user's question based on this weather data.`;
+            geminiPrompt = `The user asked: "${userMessageText}". The current weather is: "${weatherInfo}". Please answer the user's question based on this weather data. Format your response as a natural, conversational paragraph. Do not use markdown, bullet points, or asterisks.`;
             botResponseText = await askGemini(geminiPrompt);
           } catch (geoError: any) {
              console.error("Geolocation error:", geoError);
@@ -89,15 +93,18 @@ export function ChatBot() {
           }
         }
       } else {
-        botResponseText = await askGemini(userMessageText);
+        geminiPrompt = `The user asked: "${userMessageText}". Please answer the question. Format your response as a natural, conversational paragraph. Do not use markdown, bullet points, or asterisks.`;
+        botResponseText = await askGemini(geminiPrompt);
       }
       
+      setIsLoading(false);
       const botMessageId = nextId + 1;
       setMessages((prev) => [
         ...prev,
-        { id: botMessageId, sender: 'bot', text: '', isTyping: true },
+        { id: botMessageId, sender: 'bot', text: '' },
       ]);
       
+      setIsTyping(true);
       let index = 0;
       const interval = setInterval(() => {
         setMessages((prev) =>
@@ -108,21 +115,17 @@ export function ChatBot() {
           )
         );
         index++;
-        if (index === botResponseText.length) {
+        if (index >= botResponseText.length) {
           clearInterval(interval);
-           setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === botMessageId ? { ...msg, isTyping: false } : msg
-            )
-          );
+          setIsTyping(false);
         }
       }, TYPING_SPEED);
 
     } catch (error) {
       console.error("Error getting bot response:", error);
        setMessages((prev) => [...prev, { id: nextId + 1, sender: 'bot', text: "⚠️ Gemini API failed. Please try again." }]);
-    } finally {
-      setIsLoading(false);
+       setIsLoading(false);
+       setIsTyping(false);
     }
   };
 
@@ -166,17 +169,17 @@ export function ChatBot() {
                       )}
                        <div
                         className={cn(
-                          'p-3 rounded-lg max-w-[80%]',
+                          'p-3 rounded-lg max-w-[80%] whitespace-pre-wrap',
                            message.sender === 'user'
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-muted text-foreground'
                         )}
                       >
-                        <p className="text-sm">{message.text}{message.isTyping && <span className="animate-pulse">...</span>}</p>
+                        <p className="text-sm">{message.text}</p>
                       </div>
                     </div>
                   ))}
-                   {isLoading && messages[messages.length-1]?.sender === 'user' && (
+                   {isLoading && (
                     <div className="flex items-start gap-3 justify-start">
                          <div className="bg-muted text-foreground rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
                            <Bot size={16} />
@@ -186,6 +189,7 @@ export function ChatBot() {
                         </div>
                     </div>
                   )}
+                  <div ref={endOfMessagesRef} />
                 </div>
               </CardContent>
               <CardFooter className="border-t pt-4">
@@ -195,11 +199,11 @@ export function ChatBot() {
                         placeholder="Ask about disasters or weather..."
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleSendMessage()}
-                        disabled={isLoading}
+                        onKeyDown={(e) => e.key === 'Enter' && !isLoading && !isTyping && handleSendMessage()}
+                        disabled={isLoading || isTyping}
                         className="flex-1"
                     />
-                    <Button onClick={handleSendMessage} disabled={isLoading || !inputValue.trim()}>
+                    <Button onClick={handleSendMessage} disabled={isLoading || isTyping || !inputValue.trim()}>
                         <Send size={16} />
                     </Button>
                 </div>
