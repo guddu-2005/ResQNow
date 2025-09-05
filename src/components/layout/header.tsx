@@ -73,7 +73,6 @@ export function Header() {
                   {navLinks.map((link) => (
                     <NavLink key={link.href} {...link} className="text-lg" />
                   ))}
-                   {user && <NavLink href="/dashboard" label="Dashboard" className="text-lg"/>}
                 </nav>
               </SheetContent>
             </Sheet>
@@ -87,7 +86,6 @@ export function Header() {
             {navLinks.map((link) => (
               <NavLink key={link.href} {...link} />
             ))}
-             {user && <NavLink href="/dashboard" label="Dashboard" />}
           </nav>
         </div>
 
