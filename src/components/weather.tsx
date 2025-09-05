@@ -4,84 +4,124 @@
 import React, { useEffect, useState, memo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertTriangle, MapPin, Sun, Cloud, Wind, Droplets, Search, CloudRain, CloudSnow, History, Calendar, Thermometer } from 'lucide-react';
+import { AlertTriangle, MapPin, Sun, Cloud, Wind, Droplets, Search, CloudRain, CloudSnow, Calendar, Thermometer } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { format, fromUnixTime, subDays } from 'date-fns';
+import { format, fromUnixTime, parseISO } from 'date-fns';
 
-type WeatherData = {
-  current: {
-    dt: number;
+type CurrentWeatherData = {
+  name: string;
+  dt: number;
+  main: {
     temp: number;
     humidity: number;
-    wind_speed: number;
-    weather: {
-      description: string;
-      icon: string;
-      main: string;
-    }[];
   };
-  daily: {
-    dt: number;
-    temp: {
-      day: number;
-      night: number;
-    };
-    weather: {
-      id: number;
-      main: string;
-      description: string;
-      icon: string;
-    }[];
+  wind: {
+    speed: number;
+  };
+  weather: {
+    description: string;
+    icon: string;
+    main: string;
   }[];
-  lat: number;
-  lon: number;
-  timezone: string;
 };
 
-type HistoricalWeatherData = {
-    dt: number;
-    temp: number;
-    weather: {
-        icon: string;
-        main: string;
+type ForecastData = {
+    list: {
+        dt: number;
+        main: {
+            temp: number;
+            temp_min: number;
+            temp_max: number;
+        };
+        weather: {
+            id: number;
+            main: string;
+            description: string;
+            icon: string;
+        }[];
+        dt_txt: string;
     }[];
-}[];
+    city: {
+        name: string;
+        timezone: number;
+    }
+};
+
+type DailyForecast = {
+    dt: number;
+    temp: {
+        day: number;
+        night: number;
+    };
+    weather: {
+        id: number;
+        main: string;
+        description: string;
+        icon: string;
+    };
+};
 
 type FullWeatherData = {
-  current: WeatherData;
-  historical: HistoricalWeatherData;
+  current: CurrentWeatherData;
+  forecast: DailyForecast[];
   locationName: string;
 };
 
 const API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_KEY;
 
+function processForecast(forecastData: ForecastData): DailyForecast[] {
+    const dailyData: { [key: string]: DailyForecast } = {};
+
+    forecastData.list.forEach(item => {
+        const date = format(fromUnixTime(item.dt), 'yyyy-MM-dd');
+        
+        if (!dailyData[date]) {
+            dailyData[date] = {
+                dt: item.dt,
+                temp: {
+                    day: -Infinity,
+                    night: Infinity,
+                },
+                weather: item.weather[0],
+            };
+        }
+        
+        dailyData[date].temp.day = Math.max(dailyData[date].temp.day, item.main.temp_max);
+        dailyData[date].temp.night = Math.min(dailyData[date].temp.night, item.main.temp_min);
+        
+        // Use weather from midday for a more representative icon
+        if (item.dt_txt.includes("12:00:00")) {
+            dailyData[date].weather = item.weather[0];
+        }
+    });
+
+    return Object.values(dailyData);
+}
+
 async function fetchWeather(lat: number, lon: number): Promise<Omit<FullWeatherData, 'locationName'>> {
   if (!API_KEY) throw new Error('OpenWeather API key not configured. Please add NEXT_PUBLIC_OPENWEATHER_KEY to your environment variables.');
   
-  // Fetch current and forecast data
-  const oneCallUrl = `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly,alerts&appid=${API_KEY}&units=metric`;
-  const oneCallRes = await fetch(oneCallUrl);
-  if (!oneCallRes.ok) throw new Error(`Weather API request failed with status ${oneCallRes.status}. Check your API key and permissions.`);
-  const currentAndForecastData: WeatherData = await oneCallRes.json();
+  const currentWeatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`;
+  const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`;
 
-  // Fetch historical data for the last 2 days
-  const historicalPromises = [subDays(new Date(), 2), subDays(new Date(), 1)].map(date => {
-    const historyUrl = `https://api.openweathermap.org/data/3.0/onecall/timemachine?lat=${lat}&lon=${lon}&dt=${Math.floor(date.getTime() / 1000)}&appid=${API_KEY}&units=metric`;
-    return fetch(historyUrl);
-  });
+  const [currentRes, forecastRes] = await Promise.all([
+      fetch(currentWeatherUrl),
+      fetch(forecastUrl)
+  ]);
   
-  const historicalResponses = await Promise.all(historicalPromises);
-  const historicalData: HistoricalWeatherData = (await Promise.all(historicalResponses.map(res => {
-      if (!res.ok) throw new Error(`Historical weather API request failed with status ${res.status}`);
-      return res.json();
-  }))).map(h => h.data[0]);
+  if (!currentRes.ok) throw new Error(`Current weather API request failed with status ${currentRes.status}. Check your API key and permissions.`);
+  if (!forecastRes.ok) throw new Error(`Forecast API request failed with status ${forecastRes.status}. Check your API key and permissions.`);
+  
+  const currentData: CurrentWeatherData = await currentRes.json();
+  const forecastData: ForecastData = await forecastRes.json();
+  const processedForecast = processForecast(forecastData);
 
-  return { current: currentAndForecastData, historical: historicalData };
+  return { current: currentData, forecast: processedForecast };
 }
 
 async function geocodeCity(city: string): Promise<{ lat: number; lon: number }> {
@@ -93,7 +133,6 @@ async function geocodeCity(city: string): Promise<{ lat: number; lon: number }> 
     if (data.length === 0) throw new Error('City not found.');
     return { lat: data[0].lat, lon: data[0].lon };
 }
-
 
 const getWeatherIcon = (iconCode: string, main: string, size: 'sm' | 'lg' = 'lg') => {
     const s = size === 'lg' ? "w-16 h-16" : "w-10 h-10";
@@ -123,16 +162,16 @@ const WeatherComponent = () => {
         const coords = await geocodeCity(query.city);
         lat = coords.lat;
         lon = coords.lon;
-        name = query.city;
+        name = query.city.split(',')[0].trim().replace(/\b\w/g, l => l.toUpperCase());
       } else {
         lat = query.lat;
         lon = query.lon;
         name = query.name || `Lat: ${lat.toFixed(2)}, Lon: ${lon.toFixed(2)}`;
       }
 
-      const { current, historical } = await fetchWeather(lat, lon);
+      const { current, forecast } = await fetchWeather(lat, lon);
       const locationName = name;
-      setWeatherData({ current, historical, locationName });
+      setWeatherData({ current, forecast, locationName });
     } catch (err: any) {
       console.error(err);
       const errorMessage = err.message || "Could not fetch weather data.";
@@ -208,20 +247,14 @@ const WeatherComponent = () => {
                     </div>
                 ) : weatherData ? (
                     <Tabs defaultValue="today" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3">
+                        <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="today">Today</TabsTrigger>
-                            <TabsTrigger value="history">History</TabsTrigger>
                             <TabsTrigger value="forecast">Forecast</TabsTrigger>
                         </TabsList>
                         <AnimatePresence mode="wait">
                             <TabsContent value="today">
                                 <motion.div variants={tabContentVariant} initial="hidden" animate="visible" exit="hidden">
                                     <TodayWeather weatherData={weatherData} />
-                                </motion.div>
-                            </TabsContent>
-                            <TabsContent value="history">
-                                <motion.div variants={tabContentVariant} initial="hidden" animate="visible" exit="hidden">
-                                    <HistoryWeather weatherData={weatherData} />
                                 </motion.div>
                             </TabsContent>
                             <TabsContent value="forecast">
@@ -239,7 +272,7 @@ const WeatherComponent = () => {
 };
 
 const TodayWeather = ({ weatherData }: { weatherData: FullWeatherData }) => {
-    const { current } = weatherData.current;
+    const { current } = weatherData;
     return (
         <div className="py-4">
             <div className="text-center pb-4">
@@ -253,46 +286,20 @@ const TodayWeather = ({ weatherData }: { weatherData: FullWeatherData }) => {
             </div>
             <div className="flex items-center justify-center text-7xl font-bold my-4">
                 {getWeatherIcon(current.weather[0].icon, current.weather[0].main)}
-                <span className="ml-4">{Math.round(current.temp)}°C</span>
+                <span className="ml-4">{Math.round(current.main.temp)}°C</span>
             </div>
             <p className="capitalize text-center text-2xl text-muted-foreground -mt-4 mb-6">{current.weather[0].description}</p>
             <div className="grid grid-cols-2 gap-4 text-center text-muted-foreground">
                 <div className="flex items-center justify-center gap-2 bg-secondary p-3 rounded-lg">
                     <Droplets className="w-5 h-5" />
-                    <span>Humidity: {current.humidity}%</span>
+                    <span>Humidity: {current.main.humidity}%</span>
                 </div>
                 <div className="flex items-center justify-center gap-2 bg-secondary p-3 rounded-lg">
                     <Wind className="w-5 h-5" />
-                    <span>Wind: {current.wind_speed.toFixed(1)} m/s</span>
+                    <span>Wind: {current.wind.speed.toFixed(1)} m/s</span>
                 </div>
             </div>
         </div>
-    );
-};
-
-const HistoryWeather = ({ weatherData }: { weatherData: FullWeatherData }) => {
-    return (
-       <div className="py-4">
-         <h3 className="text-center text-xl font-semibold mb-4 flex items-center justify-center gap-2">
-           <History className="h-5 w-5" />
-           <span>Past 2 Days</span>
-         </h3>
-         <Carousel opts={{ align: "start" }} className="w-full">
-            <CarouselContent>
-            {weatherData.historical.map((day, index) => (
-                <CarouselItem key={day.dt} className="basis-1/2 md:basis-1/3">
-                    <Card className="flex flex-col items-center justify-center p-4 h-full bg-secondary">
-                        <p className="font-semibold text-sm">{format(fromUnixTime(day.dt), 'EEE, MMM d')}</p>
-                        {getWeatherIcon(day.weather[0].icon, day.weather[0].main, 'sm')}
-                        <p className="text-lg font-bold">{Math.round(day.temp)}°C</p>
-                    </Card>
-                </CarouselItem>
-            ))}
-            </CarouselContent>
-            <CarouselPrevious className="hidden sm:flex" />
-            <CarouselNext className="hidden sm:flex" />
-         </Carousel>
-       </div>
     );
 };
 
@@ -301,15 +308,15 @@ const ForecastWeather = ({ weatherData }: { weatherData: FullWeatherData }) => {
        <div className="py-4">
          <h3 className="text-center text-xl font-semibold mb-4 flex items-center justify-center gap-2">
            <Calendar className="h-5 w-5" />
-           <span>7-Day Forecast</span>
+           <span>5-Day Forecast</span>
          </h3>
          <Carousel opts={{ align: "start" }} className="w-full">
             <CarouselContent>
-            {weatherData.current.daily.slice(1).map((day) => (
+            {weatherData.forecast.map((day) => (
                 <CarouselItem key={day.dt} className="basis-1/2 md:basis-1/3">
                      <Card className="flex flex-col items-center justify-center p-4 h-full bg-secondary">
                         <p className="font-semibold text-sm">{format(fromUnixTime(day.dt), 'EEE, MMM d')}</p>
-                        {getWeatherIcon(day.weather[0].icon, day.weather[0].main, 'sm')}
+                        {getWeatherIcon(day.weather.icon, day.weather.main, 'sm')}
                         <p className="text-lg font-bold">{Math.round(day.temp.day)}°C</p>
                         <p className="text-sm text-muted-foreground">{Math.round(day.temp.night)}°C</p>
                     </Card>
@@ -326,25 +333,31 @@ const ForecastWeather = ({ weatherData }: { weatherData: FullWeatherData }) => {
 const WeatherSkeleton = () => {
     return (
         <div className="h-[370px] space-y-4 py-4">
-            <div className="text-center space-y-2">
-                <Skeleton className="h-8 w-3/5 mx-auto rounded-lg" />
-                <Skeleton className="h-6 w-2/5 mx-auto rounded-lg" />
-            </div>
-            <div className="flex items-center justify-center my-4">
-                <Skeleton className="h-16 w-16 rounded-full" />
-                <Skeleton className="h-12 w-24 ml-4 rounded-lg" />
-            </div>
-            <Skeleton className="h-6 w-1/2 mx-auto rounded-lg" />
-            <div className="grid grid-cols-2 gap-4 pt-4">
-                <Skeleton className="h-12 w-full rounded-lg" />
-                <Skeleton className="h-12 w-full rounded-lg" />
-            </div>
-             <div className="grid grid-cols-2 gap-4 pt-4">
-                <Skeleton className="h-24 w-full rounded-lg" />
-                <Skeleton className="h-24 w-full rounded-lg" />
-            </div>
+            <Tabs defaultValue="today" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="today" disabled>Today</TabsTrigger>
+                    <TabsTrigger value="forecast" disabled>Forecast</TabsTrigger>
+                </TabsList>
+                <div className="pt-8 space-y-4">
+                    <div className="text-center space-y-2">
+                        <Skeleton className="h-8 w-3/5 mx-auto rounded-lg" />
+                        <Skeleton className="h-6 w-2/5 mx-auto rounded-lg" />
+                    </div>
+                    <div className="flex items-center justify-center my-4">
+                        <Skeleton className="h-16 w-16 rounded-full" />
+                        <Skeleton className="h-12 w-24 ml-4 rounded-lg" />
+                    </div>
+                    <Skeleton className="h-6 w-1/2 mx-auto rounded-lg" />
+                    <div className="grid grid-cols-2 gap-4 pt-4">
+                        <Skeleton className="h-12 w-full rounded-lg" />
+                        <Skeleton className="h-12 w-full rounded-lg" />
+                    </div>
+                </div>
+            </Tabs>
         </div>
     )
 }
 
 export const Weather = memo(WeatherComponent);
+
+    
