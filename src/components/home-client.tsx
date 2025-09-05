@@ -47,26 +47,20 @@ export function HomeClient() {
     try {
       const weatherData = await getWeatherByCoords(lat, lon);
       setWeather(weatherData);
-      if (!location || location.name === 'India') {
-        setLocation({
-          lat: lat,
-          lon: lon,
-          name: weatherData.name,
-        });
-      }
+      // Don't update location name from weather data to avoid extra re-renders
     } catch (err) {
       setError('Could not fetch weather data.');
       console.error(err);
     }
-  }, [location]);
+  }, []);
 
   useEffect(() => {
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          fetchWeather(latitude, longitude);
           setLocation({ lat: latitude, lon: longitude, name: 'Your Location' });
+          fetchWeather(latitude, longitude);
         },
         (err) => {
           setError('Please enable location access to see local weather and disaster alerts.');
@@ -74,8 +68,8 @@ export function HomeClient() {
           // Fallback to a default location if permission is denied
           const defaultLat = 20.5937;
           const defaultLon = 78.9629;
-          fetchWeather(defaultLat, defaultLon); 
           setLocation({ lat: defaultLat, lon: defaultLon, name: 'India' });
+          fetchWeather(defaultLat, defaultLon); 
         }
       );
     } else {
@@ -83,8 +77,8 @@ export function HomeClient() {
       // Fallback to a default location
       const defaultLat = 20.5937;
       const defaultLon = 78.9629;
-      fetchWeather(defaultLat, defaultLon);
       setLocation({ lat: defaultLat, lon: defaultLon, name: 'India' });
+      fetchWeather(defaultLat, defaultLon);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only once on initial mount
@@ -136,7 +130,7 @@ export function HomeClient() {
               <Card className="text-center shadow-sm">
                 <CardHeader>
                   <Cloud className="h-10 w-10 mx-auto text-accent" />
-                  <CardTitle className="mt-4">{weather.name}</CardTitle>
+                  <CardTitle className="mt-4">{location?.name || weather.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-4xl font-bold">
@@ -169,7 +163,7 @@ export function HomeClient() {
               </Card>
             </div>
           ) : (
-             !error && <p className="text-center">Loading weather data...</p>
+             !error && <div className="text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto"/></div>
           )}
         </div>
       </section>
