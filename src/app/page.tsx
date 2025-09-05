@@ -1,66 +1,10 @@
 
-'use client';
-
 import {Button} from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {Map, Wind, Thermometer, Cloud, Rss} from 'lucide-react';
 import Link from 'next/link';
-import {useEffect, useState} from 'react';
-import {getWeatherByCoords} from '@/services/weather';
-import { DisasterFeed } from '@/components/disaster-feed';
+import { HomeClient } from '@/components/home-client';
 
-type WeatherData = {
-  name: string;
-  main: {
-    temp: number;
-  };
-  weather: {
-    main: string;
-    description: string;
-  }[];
-  wind: {
-    speed: number;
-  };
-};
-
-type Location = {
-  latitude: number;
-  longitude: number;
-}
 
 export default function Home() {
-  const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [location, setLocation] = useState<Location | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        async position => {
-          try {
-            const {latitude, longitude} = position.coords;
-            setLocation({latitude, longitude});
-            const weatherData = await getWeatherByCoords(latitude, longitude);
-            setWeather(weatherData);
-          } catch (err) {
-            setError('Could not fetch weather data.');
-            console.error(err);
-          }
-        },
-        err => {
-          setError('Please enable location access to see local weather and disaster alerts.');
-          console.error(err);
-        }
-      );
-    } else {
-      setError('Geolocation is not supported by your browser.');
-    }
-  }, []);
 
   return (
     <>
@@ -87,95 +31,8 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="map" className="w-full py-12 md:py-24 lg:py-32 bg-muted">
-        <div className="container px-4 md:px-6">
-          <h2 className="text-3xl font-bold tracking-tighter text-center sm:text-4xl md:text-5xl font-headline mb-8">
-            Interactive Disaster Map
-          </h2>
-          <Card className="w-full shadow-lg">
-            <CardContent className="p-0">
-              {/* Placeholder for Interactive Map */}
-              {/* Future Integration: Google Maps API will be used here */}
-              <div className="flex items-center justify-center bg-secondary rounded-lg aspect-[16/7] text-muted-foreground">
-                <div className="text-center space-y-2">
-                  <Map className="mx-auto h-12 w-12" />
-                  <p className="font-medium">Interactive Map Will Go Here</p>
-                  <p className="text-sm">
-                    Real-time disaster tracking and resource locations.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      <section id="news" className="w-full py-12 md:py-24 lg:py-32">
-        <div className="container px-4 md:px-6">
-          <h2 className="text-3xl font-bold tracking-tighter text-center sm:text-4xl md:text-5xl font-headline mb-8">
-            Latest News & Updates
-          </h2>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-             <DisasterFeed latitude={location?.latitude} longitude={location?.longitude} />
-          </div>
-        </div>
-      </section>
-
-      <section
-        id="risk-indicators"
-        className="w-full py-12 md:py-24 lg:py-32 bg-muted"
-      >
-        <div className="container px-4 md:px-6">
-          <h2 className="text-3xl font-bold tracking-tighter text-center sm:text-4xl md:text-5xl font-headline mb-8">
-            Live Weather
-          </h2>
-          {error && (
-            <div className="text-center text-red-500">
-              <p>{error}</p>
-            </div>
-          )}
-          {weather && !error ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              <Card className="text-center shadow-sm">
-                <CardHeader>
-                  <Cloud className="h-10 w-10 mx-auto text-accent" />
-                  <CardTitle className="mt-4">{weather.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-4xl font-bold">
-                    {weather.weather[0].main}
-                  </p>
-                  <p className="text-sm text-muted-foreground capitalize">
-                    {weather.weather[0].description}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="text-center shadow-sm">
-                <CardHeader>
-                  <Thermometer className="h-10 w-10 mx-auto text-accent" />
-                  <CardTitle className="mt-4">Temperature</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-4xl font-bold">{weather.main.temp}°C</p>
-                  <p className="text-sm text-muted-foreground">Current temperature</p>
-                </CardContent>
-              </Card>
-              <Card className="text-center shadow-sm">
-                <CardHeader>
-                  <Wind className="h-10 w-10 mx-auto text-accent" />
-                  <CardTitle className="mt-4">Wind Speed</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-4xl font-bold">{weather.wind.speed} m/s</p>
-                   <p className="text-sm text-muted-foreground">Current wind speed</p>
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-             !error && <p className="text-center">Loading weather data...</p>
-          )}
-        </div>
-      </section>
+      <HomeClient />
+      
     </>
   );
 }

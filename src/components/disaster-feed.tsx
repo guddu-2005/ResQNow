@@ -65,7 +65,7 @@ export async function DisasterFeed({ latitude, longitude }: { latitude?: number,
 
   if (items.length === 0) {
     return (
-      <Card className="col-span-1 lg:col-span-3">
+      <Card className="col-span-1 sm:col-span-2 lg:col-span-3">
         <CardHeader>
           <CardTitle>Latest News & Updates</CardTitle>
         </CardHeader>
