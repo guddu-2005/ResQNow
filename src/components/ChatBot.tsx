@@ -140,16 +140,16 @@ export function ChatBot() {
       {isOpen && (
         <div className="fixed bottom-24 right-6 z-50 w-[calc(100vw-3rem)] max-w-sm">
             <Card className="shadow-2xl">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                    <Bot size={24} />
-                    <span>RescueBot</span>
+              <CardHeader className="flex flex-row items-center justify-between bg-primary text-primary-foreground">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                    <Bot size={20} />
+                    <span>Rescue.AI Assistant</span>
                 </CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="md:hidden">
+                <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground md:hidden">
                     <X className="h-4 w-4" />
                 </Button>
               </CardHeader>
-              <CardContent className="h-[400px] flex flex-col">
+              <CardContent className="h-[400px] flex flex-col p-4">
                 <div ref={chatBodyRef} className="flex-grow overflow-y-auto pr-4 -mr-4 space-y-4">
                   {messages.map((message) => (
                     <div
@@ -160,7 +160,7 @@ export function ChatBot() {
                       )}
                     >
                       {message.sender === 'bot' && (
-                        <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
+                        <div className="bg-muted text-foreground rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
                            <Bot size={16} />
                         </div>
                       )}
@@ -168,27 +168,27 @@ export function ChatBot() {
                         className={cn(
                           'p-3 rounded-lg max-w-[80%]',
                            message.sender === 'user'
-                            ? 'bg-muted text-foreground'
-                            : 'bg-card text-card-foreground border'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-foreground'
                         )}
                       >
                         <p className="text-sm">{message.text}{message.isTyping && <span className="animate-pulse">...</span>}</p>
                       </div>
                     </div>
                   ))}
-                   {isLoading && (
+                   {isLoading && messages[messages.length-1]?.sender === 'user' && (
                     <div className="flex items-start gap-3 justify-start">
-                         <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
+                         <div className="bg-muted text-foreground rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
                            <Bot size={16} />
                         </div>
-                        <div className="p-3 rounded-lg bg-card text-card-foreground border">
+                        <div className="p-3 rounded-lg bg-muted text-foreground">
                             <p className="text-sm italic">Thinking...</p>
                         </div>
                     </div>
                   )}
                 </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="border-t pt-4">
                  <div className="flex w-full items-center space-x-2">
                     <Input
                         type="text"
