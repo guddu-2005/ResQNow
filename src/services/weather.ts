@@ -3,7 +3,7 @@
 // and other climate-related information to assess risks.
 'use server';
 
-const API_KEY = process.env.OPENWEATHERMAP_API_KEY;
+const API_KEY = "532e044946182f97a267f9d0b635fd2e";
 const API_URL = 'https://api.openweathermap.org/data/2.5/weather';
 
 export async function getWeatherByCoords(lat: number, lon: number) {
