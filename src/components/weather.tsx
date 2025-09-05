@@ -252,22 +252,24 @@ const WeatherComponent = () => {
                             <TabsTrigger value="today">Today</TabsTrigger>
                             <TabsTrigger value="forecast">Forecast</TabsTrigger>
                         </TabsList>
-                        <AnimatePresence mode="wait">
-                            <TabsContent value="today" forceMount>
+                        <TabsContent value="today" forceMount>
+                            <AnimatePresence mode="wait">
                                {activeTab === 'today' && (
                                 <motion.div key="today" variants={tabContentVariant} initial="hidden" animate="visible" exit="hidden">
                                     <TodayWeather weatherData={weatherData} />
                                 </motion.div>
                                )}
-                            </TabsContent>
-                            <TabsContent value="forecast" forceMount>
+                            </AnimatePresence>
+                        </TabsContent>
+                        <TabsContent value="forecast" forceMount>
+                            <AnimatePresence mode="wait">
                                {activeTab === 'forecast' && (
                                 <motion.div key="forecast" variants={tabContentVariant} initial="hidden" animate="visible" exit="hidden">
                                    <ForecastWeather weatherData={weatherData} />
                                 </motion.div>
                                )}
-                            </TabsContent>
-                        </AnimatePresence>
+                            </AnimatePresence>
+                        </TabsContent>
                     </Tabs>
                 ): null}
             </CardContent>
@@ -364,5 +366,3 @@ const WeatherSkeleton = () => {
 }
 
 export const Weather = memo(WeatherComponent);
-
-    
