@@ -11,8 +11,10 @@ import { getWeather } from '@/services/weather';
 import { cn } from '@/lib/utils';
 
 type Message = {
+  id: number;
   sender: 'user' | 'bot';
   text: string;
+  isTyping?: boolean;
 };
 
 type CachedWeather = {
@@ -21,11 +23,13 @@ type CachedWeather = {
 };
 
 const WEATHER_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+const TYPING_SPEED = 40; // ms per character
 
 export function ChatBot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
+      id: 0,
       sender: 'bot',
       text: "Hello! I'm RescueBot. How can I assist you with disaster information or current weather?",
     },
@@ -41,7 +45,7 @@ export function ChatBot() {
       chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
     }
   }, [messages, isOpen]);
-  
+
   const getCurrentPosition = useCallback((): Promise<GeolocationPosition> => {
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
@@ -51,12 +55,13 @@ export function ChatBot() {
     });
   }, []);
 
-
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
     const userMessageText = inputValue;
-    setMessages((prev) => [...prev, { sender: 'user', text: userMessageText }]);
+    const nextId = messages.length;
+    
+    setMessages((prev) => [...prev, { id: nextId, sender: 'user', text: userMessageText }]);
     setInputValue('');
     setIsLoading(true);
 
@@ -87,11 +92,35 @@ export function ChatBot() {
         botResponseText = await askGemini(userMessageText);
       }
       
-      setMessages((prev) => [...prev, { sender: 'bot', text: botResponseText }]);
+      const botMessageId = nextId + 1;
+      setMessages((prev) => [
+        ...prev,
+        { id: botMessageId, sender: 'bot', text: '', isTyping: true },
+      ]);
+      
+      let index = 0;
+      const interval = setInterval(() => {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === botMessageId
+              ? { ...msg, text: botResponseText.substring(0, index + 1) }
+              : msg
+          )
+        );
+        index++;
+        if (index === botResponseText.length) {
+          clearInterval(interval);
+           setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === botMessageId ? { ...msg, isTyping: false } : msg
+            )
+          );
+        }
+      }, TYPING_SPEED);
 
     } catch (error) {
       console.error("Error getting bot response:", error);
-       setMessages((prev) => [...prev, { sender: 'bot', text: "⚠️ Gemini API failed. Please try again." }]);
+       setMessages((prev) => [...prev, { id: nextId + 1, sender: 'bot', text: "⚠️ Gemini API failed. Please try again." }]);
     } finally {
       setIsLoading(false);
     }
@@ -122,9 +151,9 @@ export function ChatBot() {
               </CardHeader>
               <CardContent className="h-[400px] flex flex-col">
                 <div ref={chatBodyRef} className="flex-grow overflow-y-auto pr-4 -mr-4 space-y-4">
-                  {messages.map((message, index) => (
+                  {messages.map((message) => (
                     <div
-                      key={index}
+                      key={message.id}
                       className={cn(
                         'flex items-start gap-3',
                         message.sender === 'user' ? 'justify-end' : 'justify-start'
@@ -143,7 +172,7 @@ export function ChatBot() {
                             : 'bg-card text-card-foreground border'
                         )}
                       >
-                        <p className="text-sm">{message.text}</p>
+                        <p className="text-sm">{message.text}{message.isTyping && <span className="animate-pulse">...</span>}</p>
                       </div>
                     </div>
                   ))}
