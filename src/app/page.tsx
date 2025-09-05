@@ -28,8 +28,14 @@ type WeatherData = {
   };
 };
 
+type Location = {
+  latitude: number;
+  longitude: number;
+}
+
 export default function Home() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [location, setLocation] = useState<Location | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -38,6 +44,7 @@ export default function Home() {
         async position => {
           try {
             const {latitude, longitude} = position.coords;
+            setLocation({latitude, longitude});
             const weatherData = await getWeatherByCoords(latitude, longitude);
             setWeather(weatherData);
           } catch (err) {
@@ -46,7 +53,7 @@ export default function Home() {
           }
         },
         err => {
-          setError('Please enable location access to see local weather.');
+          setError('Please enable location access to see local weather and disaster alerts.');
           console.error(err);
         }
       );
@@ -109,7 +116,7 @@ export default function Home() {
             Latest News & Updates
           </h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-             <DisasterFeed />
+             <DisasterFeed latitude={location?.latitude} longitude={location?.longitude} />
           </div>
         </div>
       </section>
