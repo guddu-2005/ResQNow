@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
-import { Bot, X, Send } from 'lucide-react';
+import { Bot, X, Send, ArrowDown, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,15 +38,44 @@ const ChatBotComponent = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [lastWeather, setLastWeather] = useState<CachedWeather | null>(null);
+  const [showScrollDown, setShowScrollDown] = useState(false);
 
   const chatBodyRef = useRef<HTMLDivElement>(null);
-  const endOfMessagesRef = useRef<HTMLDivElement>(null);
+  const typingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const scrollToBottom = useCallback((behavior: 'smooth' | 'auto' = 'smooth') => {
+    if (chatBodyRef.current) {
+        chatBodyRef.current.scrollTo({
+            top: chatBodyRef.current.scrollHeight,
+            behavior: behavior,
+        });
+    }
+  }, []);
+
+  const handleScroll = () => {
+    if (chatBodyRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = chatBodyRef.current;
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50; // Add a small threshold
+      setShowScrollDown(!isAtBottom);
+    }
+  };
 
   useEffect(() => {
-    if (isOpen || isTyping) {
-      endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const chatBody = chatBodyRef.current;
+    if (isOpen && chatBody) {
+        // Initial scroll to bottom when chat opens
+        scrollToBottom('auto');
+        
+        chatBody.addEventListener('scroll', handleScroll);
+        return () => chatBody.removeEventListener('scroll', handleScroll);
     }
-  }, [messages, isOpen, isTyping]);
+  }, [isOpen, scrollToBottom]);
+
+  useEffect(() => {
+    if (isTyping || !showScrollDown) {
+        scrollToBottom();
+    }
+  }, [messages, isTyping, showScrollDown, scrollToBottom]);
 
 
   const getCurrentPosition = useCallback((): Promise<GeolocationPosition> => {
@@ -58,11 +87,22 @@ const ChatBotComponent = () => {
     });
   }, []);
 
+  const stopTyping = useCallback(() => {
+    if (typingIntervalRef.current) {
+        clearInterval(typingIntervalRef.current);
+        typingIntervalRef.current = null;
+    }
+    setIsTyping(false);
+  }, []);
+
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
+    // Stop any ongoing typing before sending a new message
+    stopTyping();
+
     const userMessageText = inputValue;
-    const nextId = messages.length;
+    const nextId = messages.length > 0 ? Math.max(...messages.map(m => m.id)) + 1 : 1;
     
     setMessages((prev) => [...prev, { id: nextId, sender: 'user', text: userMessageText }]);
     setInputValue('');
@@ -107,7 +147,7 @@ const ChatBotComponent = () => {
       
       setIsTyping(true);
       let index = 0;
-      const interval = setInterval(() => {
+      typingIntervalRef.current = setInterval(() => {
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === botMessageId
@@ -117,8 +157,7 @@ const ChatBotComponent = () => {
         );
         index++;
         if (index >= botResponseText.length) {
-          clearInterval(interval);
-          setIsTyping(false);
+          stopTyping();
         }
       }, TYPING_SPEED);
 
@@ -129,6 +168,14 @@ const ChatBotComponent = () => {
        setIsTyping(false);
     }
   };
+
+  useEffect(() => {
+    return () => {
+        if(typingIntervalRef.current) {
+            clearInterval(typingIntervalRef.current);
+        }
+    };
+  }, []);
 
   return (
     <>
@@ -155,7 +202,7 @@ const ChatBotComponent = () => {
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.3 }}
           >
-              <Card className="shadow-2xl flex flex-col h-[500px]">
+              <Card className="shadow-2xl flex flex-col h-[500px] relative">
                 <CardHeader className="flex flex-row items-center justify-between bg-primary text-primary-foreground">
                   <CardTitle className="flex items-center gap-2 text-lg">
                       <Bot size={20} />
@@ -165,8 +212,8 @@ const ChatBotComponent = () => {
                       <X className="h-4 w-4" />
                   </Button>
                 </CardHeader>
-                <CardContent className="flex-1 overflow-y-auto p-4">
-                  <div ref={chatBodyRef} className="space-y-4">
+                <CardContent ref={chatBodyRef} className="flex-1 overflow-y-auto p-4">
+                  <div className="space-y-4">
                     {messages.map((message) => (
                       <motion.div
                         key={message.id}
@@ -185,10 +232,10 @@ const ChatBotComponent = () => {
                         )}
                          <div
                           className={cn(
-                            'p-3 rounded-lg max-w-[80%] whitespace-pre-wrap',
+                            'p-3 rounded-xl max-w-[80%] whitespace-pre-wrap',
                              message.sender === 'user'
                               ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted text-foreground'
+                              : 'bg-secondary text-secondary-foreground'
                           )}
                         >
                           <p className="text-sm">{message.text}</p>
@@ -196,18 +243,57 @@ const ChatBotComponent = () => {
                       </motion.div>
                     ))}
                      {isLoading && (
-                      <div className="flex items-start gap-3 justify-start">
+                      <motion.div 
+                        className="flex items-start gap-3 justify-start"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
                            <div className="bg-muted text-foreground rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
                              <Bot size={16} />
                           </div>
-                          <div className="p-3 rounded-lg bg-muted text-foreground">
+                          <div className="p-3 rounded-xl bg-secondary text-secondary-foreground">
                               <p className="text-sm italic">Thinking...</p>
                           </div>
-                      </div>
+                      </motion.div>
                     )}
-                    <div ref={endOfMessagesRef} />
                   </div>
                 </CardContent>
+
+                <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-auto">
+                    <AnimatePresence>
+                    {isTyping && (
+                        <motion.div
+                         initial={{ opacity: 0, y: 10 }}
+                         animate={{ opacity: 1, y: 0 }}
+                         exit={{ opacity: 0, y: 10 }}
+                         transition={{ duration: 0.2 }}
+                        >
+                        <Button variant="outline" size="sm" onClick={stopTyping} className="bg-background shadow-lg rounded-full">
+                            <Square className="mr-2 h-4 w-4"/>
+                            Stop Generating
+                        </Button>
+                        </motion.div>
+                    )}
+                    </AnimatePresence>
+                </div>
+
+                <AnimatePresence>
+                    {showScrollDown && (
+                        <motion.div
+                            className="absolute bottom-24 right-4"
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                        >
+                            <Button onClick={() => scrollToBottom()} size="icon" className="rounded-full shadow-lg">
+                                <ArrowDown size={18} />
+                            </Button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 <CardFooter className="border-t pt-4">
                    <div className="flex w-full items-center space-x-2">
                       <Input
@@ -217,9 +303,9 @@ const ChatBotComponent = () => {
                           onChange={(e) => setInputValue(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && !isLoading && !isTyping && handleSendMessage()}
                           disabled={isLoading || isTyping}
-                          className="flex-1"
+                          className="flex-1 rounded-full px-4"
                       />
-                      <Button onClick={handleSendMessage} disabled={isLoading || isTyping || !inputValue.trim()}>
+                      <Button onClick={handleSendMessage} disabled={isLoading || isTyping || !inputValue.trim()} className="rounded-full">
                           <Send size={16} />
                       </Button>
                   </div>
