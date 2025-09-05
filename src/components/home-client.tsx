@@ -10,6 +10,7 @@ import {
 import {Map, Wind, Thermometer, Cloud} from 'lucide-react';
 import {useEffect, useState} from 'react';
 import {getWeatherByCoords} from '@/services/weather';
+import { SearchBar } from './SearchBar';
 
 type WeatherData = {
   name: string;
@@ -35,21 +36,31 @@ export function HomeClient({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useState<Location | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const handleLocationSearch = (lat: number, lon: number) => {
+    setLocation({ latitude: lat, longitude: lon });
+  };
+
   useEffect(() => {
-    if ('geolocation' in navigator) {
+    const fetchInitialData = async (lat: number, lon: number) => {
+      try {
+        const weatherData = await getWeatherByCoords(lat, lon);
+        setWeather(weatherData);
+      } catch (err) {
+        setError('Could not fetch weather data.');
+        console.error(err);
+      }
+    };
+    
+    if (location) {
+        fetchInitialData(location.latitude, location.longitude);
+    } else if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
-        async position => {
-          try {
-            const {latitude, longitude} = position.coords;
-            setLocation({latitude, longitude});
-            const weatherData = await getWeatherByCoords(latitude, longitude);
-            setWeather(weatherData);
-          } catch (err) {
-            setError('Could not fetch weather data.');
-            console.error(err);
-          }
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setLocation({ latitude, longitude });
+          fetchInitialData(latitude, longitude);
         },
-        err => {
+        (err) => {
           setError('Please enable location access to see local weather and disaster alerts.');
           console.error(err);
         }
@@ -57,15 +68,18 @@ export function HomeClient({ children }: { children: React.ReactNode }) {
     } else {
       setError('Geolocation is not supported by your browser.');
     }
-  }, []);
+  }, [location]);
 
   return (
     <>
       <section id="map" className="w-full py-12 md:py-24 lg:py-32 bg-muted">
         <div className="container px-4 md:px-6">
-          <h2 className="text-3xl font-bold tracking-tighter text-center sm:text-4xl md:text-5xl font-headline mb-8">
-            Interactive Disaster Map
-          </h2>
+          <div className="flex flex-col items-center gap-4 mb-8">
+            <h2 className="text-3xl font-bold tracking-tighter text-center sm:text-4xl md:text-5xl font-headline">
+              Interactive Disaster Map
+            </h2>
+             <SearchBar onSearch={handleLocationSearch} />
+          </div>
           <Card className="w-full shadow-lg">
             <CardContent className="p-0">
               {/* Placeholder for Interactive Map */}
@@ -75,7 +89,7 @@ export function HomeClient({ children }: { children: React.ReactNode }) {
                   <Map className="mx-auto h-12 w-12" />
                   <p className="font-medium">Interactive Map Will Go Here</p>
                   <p className="text-sm">
-                    Real-time disaster tracking and resource locations.
+                    {location ? `Showing results for: Lat: ${location.latitude.toFixed(4)}, Lon: ${location.longitude.toFixed(4)}` : 'Real-time disaster tracking and resource locations.'}
                   </p>
                 </div>
               </div>
