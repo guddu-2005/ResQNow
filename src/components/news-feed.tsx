@@ -28,7 +28,8 @@ const REFETCH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 async function getNews(): Promise<Article[]> {
   try {
-    const res = await fetch(NEWS_API_URL);
+    const proxyUrl = 'https://api.allorigins.win/raw?url=';
+    const res = await fetch(`${proxyUrl}${encodeURIComponent(NEWS_API_URL)}`);
     if (!res.ok) {
       throw new Error(`NewsAPI request failed with status ${res.status}`);
     }
