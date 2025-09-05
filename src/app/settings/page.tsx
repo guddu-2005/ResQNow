@@ -50,9 +50,9 @@ export default function SettingsPage() {
         if (data.theme) setTheme(data.theme);
       }
     } catch (error: any) {
-      if (error.code === 'failed-precondition' && retries > 0) {
-        // Retry if Firestore is initializing
-        setTimeout(() => fetchSettings(userId, retries - 1), 500);
+      if ((error.code === 'failed-precondition' || error.message.includes('offline')) && retries > 0) {
+        // Retry if Firestore is initializing or client is temporarily offline
+        setTimeout(() => fetchSettings(userId, retries - 1), 1000);
         return;
       }
       console.error("Error fetching settings:", error);
@@ -62,7 +62,9 @@ export default function SettingsPage() {
         description: "Could not fetch your settings.",
       });
     } finally {
-      setIsLoading(false);
+      if (retries === 0 || !((error: any) => error.code === 'failed-precondition' || error.message.includes('offline'))(null)) {
+        setIsLoading(false);
+      }
     }
   }, [setTheme, toast]);
 
@@ -166,7 +168,6 @@ export default function SettingsPage() {
       </motion.div>
 
       <motion.div className="grid gap-8 md:grid-cols-2" variants={containerVariants}>
-        
         {/* Profile Card */}
         <motion.div variants={itemVariants}>
           <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
@@ -186,6 +187,25 @@ export default function SettingsPage() {
                 <KeyRound className="mr-2 h-4 w-4"/>
                 Change Password
               </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+        
+        {/* Appearance Card */}
+        <motion.div variants={itemVariants}>
+          <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                 {theme === 'dark' ? <Moon className="h-5 w-5 text-primary"/> : <Sun className="h-5 w-5 text-primary"/>}
+                <span>Appearance</span>
+              </CardTitle>
+              <CardDescription>Customize the look and feel of the application.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="dark-mode">Dark Mode</Label>
+                <Switch id="dark-mode" checked={theme === 'dark'} onCheckedChange={handleThemeChange}/>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -233,25 +253,6 @@ export default function SettingsPage() {
           </Card>
         </motion.div>
 
-        {/* Appearance Card */}
-        <motion.div variants={itemVariants}>
-          <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                 {theme === 'dark' ? <Moon className="h-5 w-5 text-primary"/> : <Sun className="h-5 w-5 text-primary"/>}
-                <span>Appearance</span>
-              </CardTitle>
-              <CardDescription>Customize the look and feel of the application.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="dark-mode">Dark Mode</Label>
-                <Switch id="dark-mode" checked={theme === 'dark'} onCheckedChange={handleThemeChange}/>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
         {/* Account Card */}
         <motion.div variants={itemVariants}>
           <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
@@ -269,10 +270,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </motion.div>
-
       </motion.div>
     </motion.div>
   );
 }
-
-    
