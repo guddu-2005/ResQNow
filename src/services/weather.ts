@@ -34,3 +34,5 @@ export async function getWeather(lat: number, lon: number): Promise<string> {
     throw new Error("Could not retrieve weather information at this time.");
   }
 }
+
+    
