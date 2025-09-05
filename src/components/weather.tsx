@@ -149,6 +149,7 @@ const WeatherComponent = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('today');
 
   const handleFetchWeather = useCallback(async (query: { lat: number; lon: number; name?: string } | { city: string }) => {
     setLoading(true);
@@ -246,21 +247,25 @@ const WeatherComponent = () => {
                         <p className="text-sm text-muted-foreground">{error}</p>
                     </div>
                 ) : weatherData ? (
-                    <Tabs defaultValue="today" className="w-full">
+                    <Tabs defaultValue="today" className="w-full" onValueChange={setActiveTab}>
                         <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="today">Today</TabsTrigger>
                             <TabsTrigger value="forecast">Forecast</TabsTrigger>
                         </TabsList>
                         <AnimatePresence mode="wait">
-                            <TabsContent value="today">
-                                <motion.div variants={tabContentVariant} initial="hidden" animate="visible" exit="hidden">
+                            <TabsContent value="today" forceMount>
+                               {activeTab === 'today' && (
+                                <motion.div key="today" variants={tabContentVariant} initial="hidden" animate="visible" exit="hidden">
                                     <TodayWeather weatherData={weatherData} />
                                 </motion.div>
+                               )}
                             </TabsContent>
-                            <TabsContent value="forecast">
-                                <motion.div variants={tabContentVariant} initial="hidden" animate="visible" exit="hidden">
+                            <TabsContent value="forecast" forceMount>
+                               {activeTab === 'forecast' && (
+                                <motion.div key="forecast" variants={tabContentVariant} initial="hidden" animate="visible" exit="hidden">
                                    <ForecastWeather weatherData={weatherData} />
                                 </motion.div>
+                               )}
                             </TabsContent>
                         </AnimatePresence>
                     </Tabs>
