@@ -7,14 +7,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {Wind, Thermometer, Cloud} from 'lucide-react';
-import {useEffect, useState} from 'react';
+import {Wind, Thermometer, Cloud, Loader2} from 'lucide-react';
+import {useEffect, useState, useCallback} from 'react';
 import {getWeatherByCoords} from '@/services/weather';
 import { SearchBar } from './SearchBar';
 import dynamic from 'next/dynamic';
 
 const MapView = dynamic(() => import('@/components/map-view'), {
   ssr: false,
+  loading: () => <div className="h-[400px] w-full bg-muted flex items-center justify-center rounded-lg"><Loader2 className="h-8 w-8 animate-spin" /></div>,
 });
 
 type WeatherData = {
@@ -31,64 +32,62 @@ type WeatherData = {
   };
 };
 
-type Location = {
-  latitude: number;
-  longitude: number;
-}
+type LocationState = {
+  lat: number;
+  lon: number;
+  name: string;
+  key: number; // Add a key to force re-render of map when needed
+};
 
 export function HomeClient() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [location, setLocation] = useState<Location | null>(null);
+  const [location, setLocation] = useState<LocationState | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [mapCenter, setMapCenter] = useState<[number, number]>([20.5937, 78.9629]);
-  const [searchedPlace, setSearchedPlace] = useState<string>('India');
-
-
-  const handleLocationSearch = (lat: number, lon: number, placeName: string) => {
-    const newCenter: [number, number] = [lat, lon];
-    setLocation({ latitude: lat, longitude: lon });
-    setMapCenter(newCenter);
-    setSearchedPlace(placeName);
-  };
+  
+  const fetchWeather = useCallback(async (lat: number, lon: number) => {
+    try {
+      const weatherData = await getWeatherByCoords(lat, lon);
+      setWeather(weatherData);
+      if (!location || location.name === 'India') {
+        setLocation(prev => ({
+          lat: lat,
+          lon: lon,
+          name: weatherData.name,
+          key: prev?.key ?? Date.now()
+        }));
+      }
+    } catch (err) {
+      setError('Could not fetch weather data.');
+      console.error(err);
+    }
+  }, [location]);
 
   useEffect(() => {
-    const fetchInitialData = async (lat: number, lon: number) => {
-      try {
-        const weatherData = await getWeatherByCoords(lat, lon);
-        setWeather(weatherData);
-        if(!location) { // Only set searched place if it's the initial load
-             setSearchedPlace(weatherData.name);
-        }
-      } catch (err) {
-        setError('Could not fetch weather data.');
-        console.error(err);
-      }
-    };
-    
-    if (location) {
-        fetchInitialData(location.latitude, location.longitude);
-    } else if ('geolocation' in navigator) {
+    if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          const userLocation: [number, number] = [latitude, longitude];
-          setLocation({ latitude, longitude });
-          setMapCenter(userLocation);
-          fetchInitialData(latitude, longitude);
+          fetchWeather(latitude, longitude);
         },
         (err) => {
           setError('Please enable location access to see local weather and disaster alerts.');
           console.error(err);
-          // Fallback to default location if permission is denied
-          fetchInitialData(mapCenter[0], mapCenter[1]);
+          // Fallback to a default location if permission is denied
+          fetchWeather(20.5937, 78.9629); // Default to India
         }
       );
     } else {
       setError('Geolocation is not supported by your browser.');
-      // Fallback to default location
-      fetchInitialData(mapCenter[0], mapCenter[1]);
+      // Fallback to a default location
+      fetchWeather(20.5937, 78.9629); // Default to India
     }
-  }, [location]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on initial mount
+
+  const handleLocationSearch = (lat: number, lon: number, placeName: string) => {
+    setLocation({ lat, lon, name: placeName, key: Date.now() });
+    fetchWeather(lat, lon);
+  };
 
   return (
     <>
@@ -102,7 +101,13 @@ export function HomeClient() {
           </div>
           <Card className="w-full shadow-lg">
             <CardContent className="p-0">
-               <MapView center={mapCenter} placeName={searchedPlace} />
+               {location ? (
+                <MapView key={location.key} center={[location.lat, location.lon]} placeName={location.name} />
+               ) : (
+                <div className="h-[400px] w-full bg-muted flex items-center justify-center rounded-lg">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+               )}
             </CardContent>
           </Card>
         </div>
