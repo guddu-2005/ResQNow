@@ -36,7 +36,6 @@ type LocationState = {
   lat: number;
   lon: number;
   name: string;
-  key: number; // Add a key to force re-render of map when needed
 };
 
 export function HomeClient() {
@@ -49,12 +48,11 @@ export function HomeClient() {
       const weatherData = await getWeatherByCoords(lat, lon);
       setWeather(weatherData);
       if (!location || location.name === 'India') {
-        setLocation(prev => ({
+        setLocation({
           lat: lat,
           lon: lon,
           name: weatherData.name,
-          key: prev?.key ?? Date.now()
-        }));
+        });
       }
     } catch (err) {
       setError('Could not fetch weather data.');
@@ -68,24 +66,31 @@ export function HomeClient() {
         (position) => {
           const { latitude, longitude } = position.coords;
           fetchWeather(latitude, longitude);
+          setLocation({ lat: latitude, lon: longitude, name: 'Your Location' });
         },
         (err) => {
           setError('Please enable location access to see local weather and disaster alerts.');
           console.error(err);
           // Fallback to a default location if permission is denied
-          fetchWeather(20.5937, 78.9629); // Default to India
+          const defaultLat = 20.5937;
+          const defaultLon = 78.9629;
+          fetchWeather(defaultLat, defaultLon); 
+          setLocation({ lat: defaultLat, lon: defaultLon, name: 'India' });
         }
       );
     } else {
       setError('Geolocation is not supported by your browser.');
       // Fallback to a default location
-      fetchWeather(20.5937, 78.9629); // Default to India
+      const defaultLat = 20.5937;
+      const defaultLon = 78.9629;
+      fetchWeather(defaultLat, defaultLon);
+      setLocation({ lat: defaultLat, lon: defaultLon, name: 'India' });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only once on initial mount
 
   const handleLocationSearch = (lat: number, lon: number, placeName: string) => {
-    setLocation({ lat, lon, name: placeName, key: Date.now() });
+    setLocation({ lat, lon, name: placeName });
     fetchWeather(lat, lon);
   };
 
@@ -102,7 +107,7 @@ export function HomeClient() {
           <Card className="w-full shadow-lg">
             <CardContent className="p-0">
                {location ? (
-                <MapView key={location.key} center={[location.lat, location.lon]} placeName={location.name} />
+                <MapView center={[location.lat, location.lon]} placeName={location.name} />
                ) : (
                 <div className="h-[400px] w-full bg-muted flex items-center justify-center rounded-lg">
                   <Loader2 className="h-8 w-8 animate-spin" />
