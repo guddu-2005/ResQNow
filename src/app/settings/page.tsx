@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, getFirestore } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/services/firebase';
@@ -39,9 +39,8 @@ export default function SettingsPage() {
     low: false,
   });
 
-  const fetchSettings = useCallback(async (userId: string, retries = 3) => {
+  const fetchSettings = useCallback(async (userId: string) => {
     setIsLoading(true);
-    let shouldRetry = false;
     try {
       const settingsDocRef = doc(db, 'users', userId);
       const docSnap = await getDoc(settingsDocRef);
@@ -50,30 +49,21 @@ export default function SettingsPage() {
         if (data.alerts) setAlertSettings(data.alerts);
         if (data.theme) setTheme(data.theme);
       }
-    } catch (error: any) {
-      if ((error.code === 'failed-precondition' || error.message.includes('offline')) && retries > 0) {
-        shouldRetry = true;
-        setTimeout(() => fetchSettings(userId, retries - 1), 1000);
-        return;
-      }
+    } catch (error) {
       console.error("Error fetching settings:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not fetch your settings.",
-      });
+      // Don't show a toast on initial fetch error, might be offline
     } finally {
-        if (!shouldRetry) {
-            setIsLoading(false);
-        }
+      setIsLoading(false);
     }
-  }, [setTheme, toast]);
+  }, [setTheme]);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-    } else if (user) {
-      fetchSettings(user.uid);
+    if (!authLoading) {
+      if (!user) {
+        router.push('/login');
+      } else {
+        fetchSettings(user.uid);
+      }
     }
   }, [user, authLoading, router, fetchSettings]);
 
@@ -134,12 +124,16 @@ export default function SettingsPage() {
     }
   };
 
-  if (authLoading || isLoading || !user) {
+  if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-8rem)]">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
+  }
+  
+  if (!user) {
+      return null; // or a message telling to login
   }
 
   const containerVariants = {
