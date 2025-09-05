@@ -169,111 +169,115 @@ export default function SettingsPage() {
       </motion.div>
 
       <motion.div className="grid gap-8 md:grid-cols-2" variants={containerVariants}>
-        {/* Profile Card */}
-        <motion.div variants={itemVariants}>
-          <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <UserIcon className="h-5 w-5 text-primary"/>
-                <span>Profile</span>
-              </CardTitle>
-              <CardDescription>Manage your personal account information.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={user.email || ''} readOnly disabled />
-              </div>
-              <Button onClick={handleChangePassword} variant="outline" className="w-full">
-                <KeyRound className="mr-2 h-4 w-4"/>
-                Change Password
-              </Button>
-            </CardContent>
-          </Card>
-        </motion.div>
-        
-        {/* Appearance Card */}
-        <motion.div variants={itemVariants}>
-          <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                 {theme === 'dark' ? <Moon className="h-5 w-5 text-primary"/> : <Sun className="h-5 w-5 text-primary"/>}
-                <span>Appearance</span>
-              </CardTitle>
-              <CardDescription>Customize the look and feel of the application.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="dark-mode">Dark Mode</Label>
-                <Switch id="dark-mode" checked={theme === 'dark'} onCheckedChange={handleThemeChange}/>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+        {/* Left Column */}
+        <div className="space-y-8">
+            {/* Profile Card */}
+            <motion.div variants={itemVariants}>
+            <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
+                <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                    <UserIcon className="h-5 w-5 text-primary"/>
+                    <span>Profile</span>
+                </CardTitle>
+                <CardDescription>Manage your personal account information.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" type="email" value={user.email || ''} readOnly disabled />
+                </div>
+                <Button onClick={handleChangePassword} variant="outline" className="w-full">
+                    <KeyRound className="mr-2 h-4 w-4"/>
+                    Change Password
+                </Button>
+                </CardContent>
+            </Card>
+            </motion.div>
+            
+            {/* Account Card */}
+            <motion.div variants={itemVariants}>
+            <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
+                <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                    <LogOut className="h-5 w-5 text-destructive"/>
+                    <span>Account</span>
+                </CardTitle>
+                <CardDescription>Log out from your account.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                <Button onClick={signOut} variant="destructive" className="w-full">
+                    Sign Out
+                </Button>
+                </CardContent>
+            </Card>
+            </motion.div>
+        </div>
 
-        {/* Alerts Card */}
-        <motion.div variants={itemVariants}>
-          <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Bell className="h-5 w-5 text-primary"/>
-                <span>Alert Notifications</span>
-              </CardTitle>
-              <CardDescription>Choose which types of alerts you want to receive.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="critical-alerts" className="flex items-center gap-3">
-                  <span className="h-3 w-3 rounded-full bg-red-500"></span>
-                  <span>Critical</span>
-                </Label>
-                <Switch id="critical-alerts" checked={alertSettings.critical} onCheckedChange={(val) => handleAlertsChange('critical', val)} />
-              </div>
-               <div className="flex items-center justify-between">
-                <Label htmlFor="high-alerts" className="flex items-center gap-3">
-                   <span className="h-3 w-3 rounded-full bg-orange-500"></span>
-                   <span>High</span>
-                </Label>
-                <Switch id="high-alerts" checked={alertSettings.high} onCheckedChange={(val) => handleAlertsChange('high', val)} />
-              </div>
-               <div className="flex items-center justify-between">
-                <Label htmlFor="medium-alerts" className="flex items-center gap-3">
-                   <span className="h-3 w-3 rounded-full bg-yellow-400"></span>
-                   <span>Medium</span>
-                </Label>
-                <Switch id="medium-alerts" checked={alertSettings.medium} onCheckedChange={(val) => handleAlertsChange('medium', val)} />
-              </div>
-               <div className="flex items-center justify-between">
-                <Label htmlFor="low-alerts" className="flex items-center gap-3">
-                   <span className="h-3 w-3 rounded-full bg-green-500"></span>
-                   <span>Low</span>
-                </Label>
-                <Switch id="low-alerts" checked={alertSettings.low} onCheckedChange={(val) => handleAlertsChange('low', val)} />
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+        {/* Right Column */}
+        <div className="space-y-8">
+            {/* Appearance Card */}
+            <motion.div variants={itemVariants}>
+            <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
+                <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                    {theme === 'dark' ? <Moon className="h-5 w-5 text-primary"/> : <Sun className="h-5 w-5 text-primary"/>}
+                    <span>Appearance</span>
+                </CardTitle>
+                <CardDescription>Customize the look and feel of the application.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="dark-mode">Dark Mode</Label>
+                    <Switch id="dark-mode" checked={theme === 'dark'} onCheckedChange={handleThemeChange}/>
+                </div>
+                </CardContent>
+            </Card>
+            </motion.div>
 
-        {/* Account Card */}
-        <motion.div variants={itemVariants}>
-          <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <LogOut className="h-5 w-5 text-destructive"/>
-                <span>Account</span>
-              </CardTitle>
-              <CardDescription>Log out from your account.</CardDescription>
-            </CardHeader>
-            <CardContent>
-               <Button onClick={signOut} variant="destructive" className="w-full">
-                  Sign Out
-               </Button>
-            </CardContent>
-          </Card>
-        </motion.div>
+            {/* Alerts Card */}
+            <motion.div variants={itemVariants}>
+            <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
+                <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                    <Bell className="h-5 w-5 text-primary"/>
+                    <span>Alert Notifications</span>
+                </CardTitle>
+                <CardDescription>Choose which types of alerts you want to receive.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="critical-alerts" className="flex items-center gap-3">
+                    <span className="h-3 w-3 rounded-full bg-red-500"></span>
+                    <span>Critical</span>
+                    </Label>
+                    <Switch id="critical-alerts" checked={alertSettings.critical} onCheckedChange={(val) => handleAlertsChange('critical', val)} />
+                </div>
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="high-alerts" className="flex items-center gap-3">
+                    <span className="h-3 w-3 rounded-full bg-orange-500"></span>
+                    <span>High</span>
+                    </Label>
+                    <Switch id="high-alerts" checked={alertSettings.high} onCheckedChange={(val) => handleAlertsChange('high', val)} />
+                </div>
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="medium-alerts" className="flex items-center gap-3">
+                    <span className="h-3 w-3 rounded-full bg-yellow-400"></span>
+                    <span>Medium</span>
+                    </Label>
+                    <Switch id="medium-alerts" checked={alertSettings.medium} onCheckedChange={(val) => handleAlertsChange('medium', val)} />
+                </div>
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="low-alerts" className="flex items-center gap-3">
+                    <span className="h-3 w-3 rounded-full bg-green-500"></span>
+                    <span>Low</span>
+                    </Label>
+                    <Switch id="low-alerts" checked={alertSettings.low} onCheckedChange={(val) => handleAlertsChange('low', val)} />
+                </div>
+                </CardContent>
+            </Card>
+            </motion.div>
+        </div>
       </motion.div>
     </motion.div>
   );
 }
-
-    

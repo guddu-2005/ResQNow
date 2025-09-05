@@ -7,6 +7,8 @@ import { Footer } from '@/components/layout/footer';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/hooks/use-auth';
 import { ThemeProvider } from '@/components/theme-provider';
+import { ChatBotLoader } from '@/components/ChatBotLoader';
+
 
 export const metadata: Metadata = {
   title: 'Rescue.ai',
@@ -38,6 +40,7 @@ export default function RootLayout({
             <Footer />
             <Toaster />
           </AuthProvider>
+          <ChatBotLoader />
         </ThemeProvider>
       </body>
     </html>
