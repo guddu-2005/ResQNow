@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { Bot, X, Send, CornerDownRight, Wind } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Bot, X, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,13 @@ type Message = {
   text: string;
 };
 
+type CachedWeather = {
+  data: string;
+  timestamp: number;
+};
+
+const WEATHER_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+
 export function ChatBot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -25,6 +32,7 @@ export function ChatBot() {
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [lastWeather, setLastWeather] = useState<CachedWeather | null>(null);
 
   const chatBodyRef = useRef<HTMLDivElement>(null);
 
@@ -33,68 +41,60 @@ export function ChatBot() {
       chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
     }
   }, [messages, isOpen]);
+  
+  const getCurrentPosition = useCallback((): Promise<GeolocationPosition> => {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error("Geolocation is not supported by your browser."));
+        }
+        navigator.geolocation.getCurrentPosition(resolve, reject);
+    });
+  }, []);
+
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
-    const userMessage: Message = { sender: 'user', text: inputValue };
-    setMessages((prev) => [...prev, userMessage]);
+    const userMessageText = inputValue;
+    setMessages((prev) => [...prev, { sender: 'user', text: userMessageText }]);
     setInputValue('');
     setIsLoading(true);
 
-    const lowerCaseInput = inputValue.toLowerCase();
+    const lowerCaseInput = userMessageText.toLowerCase();
     const weatherKeywords = ['weather', 'temperature', 'forecast', 'climate', 'wind', 'humidity'];
     const isWeatherQuery = weatherKeywords.some(keyword => lowerCaseInput.includes(keyword));
 
     try {
       let botResponseText = '';
       if (isWeatherQuery) {
-        botResponseText = await handleWeatherQuery(inputValue);
+        const now = Date.now();
+        if (lastWeather && (now - lastWeather.timestamp < WEATHER_CACHE_DURATION)) {
+            const geminiPrompt = `The user asked: "${userMessageText}". The current cached weather is: "${lastWeather.data}". Please answer the user's question based on this weather data.`;
+            botResponseText = await askGemini(geminiPrompt);
+        } else {
+          try {
+            const position = await getCurrentPosition();
+            const weatherInfo = await getWeather(position.coords.latitude, position.coords.longitude);
+            setLastWeather({ data: weatherInfo, timestamp: Date.now() });
+            const geminiPrompt = `The user asked: "${userMessageText}". The current weather is: "${weatherInfo}". Please answer the user's question based on this weather data.`;
+            botResponseText = await askGemini(geminiPrompt);
+          } catch (geoError: any) {
+             console.error("Geolocation error:", geoError);
+             botResponseText = "I couldn't get your location to check the weather. Please ensure you've enabled location permissions for this site. I can still answer other questions.";
+          }
+        }
       } else {
-        botResponseText = await askGemini(inputValue);
+        botResponseText = await askGemini(userMessageText);
       }
-
-      const botMessage: Message = { sender: 'bot', text: botResponseText };
-      setMessages((prev) => [...prev, botMessage]);
+      
+      setMessages((prev) => [...prev, { sender: 'bot', text: botResponseText }]);
 
     } catch (error) {
       console.error("Error getting bot response:", error);
-      const errorMessage: Message = {
-        sender: 'bot',
-        text: "Sorry, I'm having trouble connecting. Please try again later.",
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+       setMessages((prev) => [...prev, { sender: 'bot', text: "⚠️ Gemini API failed. Please try again." }]);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleWeatherQuery = (query: string): Promise<string> => {
-    return new Promise((resolve) => {
-        if (!navigator.geolocation) {
-            resolve("I can't get weather information because your browser doesn't support geolocation.");
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const { latitude, longitude } = position.coords;
-                try {
-                    const weatherInfo = await getWeather(latitude, longitude);
-                    const finalPrompt = `The user asked: "${query}". The current weather is: "${weatherInfo}". Please answer the user's question based on this weather data.`;
-                    const geminiResponse = await askGemini(finalPrompt);
-                    resolve(geminiResponse);
-                } catch (e) {
-                    console.error(e);
-                    resolve("I couldn't fetch the weather data. However, I can still try to answer your question. What would you like to know?");
-                }
-            },
-            (error) => {
-                console.error("Geolocation error:", error);
-                resolve("I couldn't get your location to check the weather. Please ensure you've enabled location permissions for this site.");
-            }
-        );
-    });
   };
 
   return (
@@ -166,7 +166,7 @@ export function ChatBot() {
                         placeholder="Ask about disasters or weather..."
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                        onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleSendMessage()}
                         disabled={isLoading}
                         className="flex-1"
                     />
