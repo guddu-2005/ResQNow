@@ -162,6 +162,47 @@ export default function SettingsPage() {
 
       <motion.div className="grid gap-8 md:grid-cols-2" variants={containerVariants}>
         
+        {/* Profile Card */}
+        <motion.div variants={itemVariants}>
+          <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <UserIcon className="h-5 w-5 text-primary"/>
+                <span>Profile</span>
+              </CardTitle>
+              <CardDescription>Manage your personal account information.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" value={user.email || ''} readOnly disabled />
+              </div>
+              <Button onClick={handleChangePassword} variant="outline" className="w-full">
+                <KeyRound className="mr-2 h-4 w-4"/>
+                Change Password
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Account Card */}
+        <motion.div variants={itemVariants}>
+          <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <LogOut className="h-5 w-5 text-destructive"/>
+                <span>Account</span>
+              </CardTitle>
+              <CardDescription>Log out from your account.</CardDescription>
+            </CardHeader>
+            <CardContent>
+               <Button onClick={signOut} variant="destructive" className="w-full">
+                  Sign Out
+               </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+
         {/* Alerts Card */}
         <motion.div variants={itemVariants}>
           <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
@@ -220,47 +261,6 @@ export default function SettingsPage() {
                 <Label htmlFor="dark-mode">Dark Mode</Label>
                 <Switch id="dark-mode" checked={theme === 'dark'} onCheckedChange={handleThemeChange}/>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Profile Card */}
-        <motion.div variants={itemVariants}>
-          <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <UserIcon className="h-5 w-5 text-primary"/>
-                <span>Profile</span>
-              </CardTitle>
-              <CardDescription>Manage your personal account information.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={user.email || ''} readOnly disabled />
-              </div>
-              <Button onClick={handleChangePassword} variant="outline" className="w-full">
-                <KeyRound className="mr-2 h-4 w-4"/>
-                Change Password
-              </Button>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Account Card */}
-        <motion.div variants={itemVariants}>
-          <Card className="shadow-lg rounded-xl transition-all hover:shadow-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <LogOut className="h-5 w-5 text-destructive"/>
-                <span>Account</span>
-              </CardTitle>
-              <CardDescription>Log out from your account.</CardDescription>
-            </CardHeader>
-            <CardContent>
-               <Button onClick={signOut} variant="destructive" className="w-full">
-                  Sign Out
-               </Button>
             </CardContent>
           </Card>
         </motion.div>
