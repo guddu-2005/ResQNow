@@ -8,28 +8,31 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { askGemini } from '@/services/gemini';
 import { getWeather } from '@/services/weather';
+import { fetchNews, NewsArticle } from '@/services/news';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+
+type MessagePayload = string | NewsArticle[];
 
 type Message = {
   id: number;
   sender: 'user' | 'bot';
-  text: string;
+  payload: MessagePayload;
 };
 
-type CachedWeather = {
-  data: string;
+type CachedData<T> = {
+  data: T;
   timestamp: number;
 };
 
-const WEATHER_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const TYPING_SPEED = 40; // ms per character
 
 const initialMessages: Message[] = [
     {
       id: 0,
       sender: 'bot',
-      text: "Hello! I'm RescueBot. How can I assist you with disaster information or current weather?",
+      payload: "Hello! I'm RescueBot. I can provide weather updates or the latest disaster news. How can I help?",
     },
 ];
 
@@ -39,7 +42,8 @@ const ChatBotComponent = () => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [lastWeather, setLastWeather] = useState<CachedWeather | null>(null);
+  const [lastWeather, setLastWeather] = useState<CachedData<string> | null>(null);
+  const [lastNews, setLastNews] = useState<CachedData<NewsArticle[]> | null>(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
 
   const chatBodyRef = useRef<HTMLDivElement>(null);
@@ -129,67 +133,86 @@ const ChatBotComponent = () => {
     const userMessageText = inputValue;
     const nextId = messages.length > 0 ? Math.max(...messages.map(m => m.id)) + 1 : 1;
     
-    setMessages((prev) => [...prev, { id: nextId, sender: 'user', text: userMessageText }]);
+    setMessages((prev) => [...prev, { id: nextId, sender: 'user', payload: userMessageText }]);
     setInputValue('');
     scrollToBottom('smooth');
     setIsLoading(true);
 
     const lowerCaseInput = userMessageText.toLowerCase();
     const weatherKeywords = ['weather', 'temperature', 'forecast', 'climate', 'wind', 'humidity'];
+    const newsKeywords = ["news", "latest", "update", "earthquake", "flood", "cyclone", "storm", "disaster"];
+    
     const isWeatherQuery = weatherKeywords.some(keyword => lowerCaseInput.includes(keyword));
+    const isNewsQuery = newsKeywords.some(keyword => lowerCaseInput.includes(keyword));
 
     try {
-      let botResponseText = '';
-      let geminiPrompt = '';
+      let botResponsePayload: MessagePayload;
 
-      if (isWeatherQuery) {
+      if (isNewsQuery) {
         const now = Date.now();
-        if (lastWeather && (now - lastWeather.timestamp < WEATHER_CACHE_DURATION)) {
-             geminiPrompt = `The user asked: "${userMessageText}". The current cached weather is: "${lastWeather.data}". Please answer the user's question based on this weather data. Format your response as a natural, conversational paragraph. Do not use markdown, bullet points, or asterisks.`;
-            botResponseText = await askGemini(geminiPrompt);
+        if(lastNews && (now - lastNews.timestamp < CACHE_DURATION)) {
+            botResponsePayload = lastNews.data;
+        } else {
+            const newsArticles = await fetchNews(userMessageText);
+            if(newsArticles.length > 0) {
+                setLastNews({data: newsArticles, timestamp: now});
+                botResponsePayload = newsArticles;
+            } else {
+                botResponsePayload = "I couldn’t find the latest disaster updates right now. Please try again later.";
+            }
+        }
+      } else if (isWeatherQuery) {
+        const now = Date.now();
+        if (lastWeather && (now - lastWeather.timestamp < CACHE_DURATION)) {
+             const geminiPrompt = `The user asked: "${userMessageText}". The current cached weather is: "${lastWeather.data}". Please answer the user's question based on this weather data. Format your response as a natural, conversational paragraph. Do not use markdown, bullet points, or asterisks.`;
+            botResponsePayload = await askGemini(geminiPrompt);
         } else {
           try {
             const position = await getCurrentPosition();
             const weatherInfo = await getWeather(position.coords.latitude, position.coords.longitude);
             setLastWeather({ data: weatherInfo, timestamp: Date.now() });
-            geminiPrompt = `The user asked: "${userMessageText}". The current weather is: "${weatherInfo}". Please answer the user's question based on this weather data. Format your response as a natural, conversational paragraph. Do not use markdown, bullet points, or asterisks.`;
-            botResponseText = await askGemini(geminiPrompt);
-          } catch (geoError: any)             {
+            const geminiPrompt = `The user asked: "${userMessageText}". The current weather is: "${weatherInfo}". Please answer the user's question based on this weather data. Format your response as a natural, conversational paragraph. Do not use markdown, bullet points, or asterisks.`;
+            botResponsePayload = await askGemini(geminiPrompt);
+          } catch (geoError: any) {
              console.error("Geolocation error:", geoError);
-             botResponseText = "I couldn't get your location to check the weather. Please ensure you've enabled location permissions for this site. I can still answer other questions.";
+             botResponsePayload = "I couldn't get your location to check the weather. Please ensure you've enabled location permissions for this site. I can still answer other questions.";
           }
         }
       } else {
-        geminiPrompt = `The user asked: "${userMessageText}". Please answer the question. Format your response as a natural, conversational paragraph. Do not use markdown, bullet points, or asterisks.`;
-        botResponseText = await askGemini(geminiPrompt);
+        const geminiPrompt = `The user asked: "${userMessageText}". Please answer the question. Format your response as a natural, conversational paragraph. Do not use markdown, bullet points, or asterisks.`;
+        botResponsePayload = await askGemini(geminiPrompt);
       }
       
       setIsLoading(false);
-      const botMessageId = nextId + 1;
-      setMessages((prev) => [
-        ...prev,
-        { id: botMessageId, sender: 'bot', text: '' },
-      ]);
       
-      setIsTyping(true);
-      let index = 0;
-      typingIntervalRef.current = setInterval(() => {
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === botMessageId
-              ? { ...msg, text: botResponseText.substring(0, index + 1) }
-              : msg
-          )
-        );
-        index++;
-        if (index >= botResponseText.length) {
-          stopTyping();
-        }
-      }, TYPING_SPEED);
-
+      if(typeof botResponsePayload === 'string') {
+        const botMessageId = nextId + 1;
+        setMessages((prev) => [
+            ...prev,
+            { id: botMessageId, sender: 'bot', payload: '' },
+        ]);
+        
+        setIsTyping(true);
+        let index = 0;
+        typingIntervalRef.current = setInterval(() => {
+            setMessages((prev) =>
+            prev.map((msg) =>
+                msg.id === botMessageId
+                ? { ...msg, payload: botResponsePayload.substring(0, index + 1) }
+                : msg
+            )
+            );
+            index++;
+            if (index >= botResponsePayload.length) {
+            stopTyping();
+            }
+        }, TYPING_SPEED);
+      } else {
+         setMessages((prev) => [...prev, { id: nextId + 1, sender: 'bot', payload: botResponsePayload }]);
+      }
     } catch (error) {
       console.error("Error getting bot response:", error);
-       setMessages((prev) => [...prev, { id: nextId + 1, sender: 'bot', text: "⚠️ Gemini API failed. Please try again." }]);
+       setMessages((prev) => [...prev, { id: nextId + 1, sender: 'bot', payload: "⚠️ API failed. Please try again." }]);
        setIsLoading(false);
        setIsTyping(false);
     }
@@ -263,13 +286,28 @@ const ChatBotComponent = () => {
                         )}
                          <div
                           className={cn(
-                            'p-3 rounded-xl max-w-[80%] whitespace-pre-wrap',
+                            'p-3 rounded-xl max-w-[80%]',
                              message.sender === 'user'
                               ? 'bg-primary text-primary-foreground'
                               : 'bg-secondary text-secondary-foreground'
                           )}
                         >
-                          <p className="text-sm">{message.text}</p>
+                            {typeof message.payload === 'string' ? (
+                                <p className="text-sm whitespace-pre-wrap">{message.payload}</p>
+                            ) : (
+                                <div className="space-y-2">
+                                    <p className="text-sm font-medium">Here are the latest updates:</p>
+                                    <ul className="space-y-1">
+                                        {message.payload.map(article => (
+                                            <li key={article.url}>
+                                                <a href={article.url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                                                   - {article.title}
+                                                </a>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
                         </div>
                       </motion.div>
                     ))}
@@ -365,3 +403,5 @@ const ChatBotComponent = () => {
 }
 
 export const ChatBot = memo(ChatBotComponent);
+
+    

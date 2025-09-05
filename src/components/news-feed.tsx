@@ -10,70 +10,12 @@ import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { fetchNews, NewsArticle } from '@/services/news';
 
-type Article = {
-  source: {
-    name: string;
-  };
-  title: string;
-  description: string;
-  url: string;
-  urlToImage: string;
-  publishedAt: string;
-  category?: string;
-};
-
-const API_KEY = 'fee27200baf64ea482524e9e28d3ed59';
-const NEWS_API_URL = `https://newsapi.org/v2/everything?q=earthquake OR flood OR cyclone OR storm OR landslide OR tsunami OR hurricane OR disaster OR weather&sortBy=publishedAt&language=en&apiKey=${API_KEY}`;
 const REFETCH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
-const keywords = ["earthquake", "flood", "cyclone", "storm", "landslide", "tsunami", "hurricane", "disaster", "weather"];
-
-function getNewsCategory(article: Omit<Article, 'category'>): string | undefined {
-    const content = `${article.title.toLowerCase()} ${article.description.toLowerCase()}`;
-    const foundKeyword = keywords.find(keyword => content.includes(keyword));
-    if (foundKeyword) {
-      if (foundKeyword === 'weather') return 'Weather Alert';
-      if (foundKeyword === 'disaster') return 'Disaster Update';
-      return foundKeyword.charAt(0).toUpperCase() + foundKeyword.slice(1);
-    }
-    return undefined;
-}
-
-
-async function getNews(): Promise<Article[]> {
-  try {
-    const proxyUrl = 'https://api.allorigins.win/raw?url=';
-    const res = await fetch(`${proxyUrl}${encodeURIComponent(NEWS_API_URL)}`);
-    if (!res.ok) {
-      throw new Error(`NewsAPI request failed with status ${res.status}`);
-    }
-    const data = await res.json();
-    
-    if (!data.articles) return [];
-    
-    const validArticles = data.articles.filter(
-        (article: Article) => article.urlToImage && article.description && article.title
-    );
-
-    const categorizedArticles: Article[] = [];
-    for (const article of validArticles) {
-        const category = getNewsCategory(article);
-        if (category) {
-            categorizedArticles.push({ ...article, category });
-        }
-    }
-    return categorizedArticles;
-
-  } catch (error) {
-    console.error("Error fetching news:", error);
-    // Return empty array to allow the component to render the error state
-    return [];
-  }
-}
-
 const NewsFeedComponent = () => {
-  const [articles, setArticles] = useState<Article[]>([]);
+  const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,13 +23,13 @@ const NewsFeedComponent = () => {
     setLoading(true);
     setError(null);
     try {
-      const newsArticles = await getNews();
+      const newsArticles = await fetchNews('disaster OR weather', 6);
       if (newsArticles.length === 0) {
         setError("Could not fetch disaster news at this moment. The source may be unavailable or there are no recent articles.");
       }
-      setArticles(newsArticles.slice(0, 6)); // Limit to 6 articles
-    } catch (err) {
-      setError("An unexpected error occurred while fetching news.");
+      setArticles(newsArticles);
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred while fetching news.");
     } finally {
       setLoading(false);
     }
@@ -195,3 +137,5 @@ const NewsFeedComponent = () => {
 }
 
 export const NewsFeed = memo(NewsFeedComponent);
+
+    
